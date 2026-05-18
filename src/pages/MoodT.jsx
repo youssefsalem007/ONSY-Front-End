@@ -23,11 +23,13 @@ const MOODS = [
 export default function MoodTracker({ onClose, onSubmit }) {
   const [value, setValue] = useState(5);
   const [submitted, setSubmitted] = useState(false);
+  const [deleted, setDeleted] = useState(false);
   const [showMoodForm, setShowMoodForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [moods, setMoods] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [formError, setFormError] = useState(null);
   const sliderRef = useRef(null);
 
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -53,9 +55,11 @@ export default function MoodTracker({ onClose, onSubmit }) {
           : [];
 
       items.forEach(item => {
-        if (item.date) {
-          const dStr = formatDate(item.date);
-          moodMap[dStr] = item;
+        const itemDate = item.createdAt || item.date;
+        if (itemDate) {
+          const dStr = formatDate(itemDate);
+          if (!moodMap[dStr]) moodMap[dStr] = [];
+          moodMap[dStr].push(item);
         }
       });
       setMoods(moodMap);
@@ -109,15 +113,17 @@ export default function MoodTracker({ onClose, onSubmit }) {
     if (clickedStr > todayStr) return; // Prevent logging future dates
 
     setSelectedDate(date);
-    const existingMood = moods[clickedStr];
-    if (existingMood && existingMood.mood) {
-      const existingScore = existingMood.mood;
+    const dayMoods = moods[clickedStr] || [];
+    if (dayMoods.length > 0 && dayMoods[dayMoods.length - 1].mood !== undefined) {
+      const existingScore = dayMoods[dayMoods.length - 1].mood;
       setValue(existingScore >= 0 && existingScore <= 10 ? existingScore : 5);
     } else {
       setValue(5);
     }
+    setFormError(null);
     setShowMoodForm(true);
     setSubmitted(false);
+    setDeleted(false);
   };
 
   const mood = MOODS.find(m => m.score === value) || MOODS[5];
@@ -127,32 +133,17 @@ export default function MoodTracker({ onClose, onSubmit }) {
     setValue(Number(e.target.value));
   }, []);
 
-  const handleSubmit = useCallback(async () => {
+  const handleAddNewMood = useCallback(async () => {
     if (!selectedDate) return;
-
     const dateStr = formatDate(selectedDate);
-    const existingMood = moods[dateStr];
-
+    setFormError(null);
+ 
     try {
-      if (existingMood) {
-        // Condition B: Update Mood
-        const moodId = existingMood._id || existingMood.id;
-        if (moodId) {
-          const updated = await updateMood(moodId, value);
-          setMoods(prev => ({
-            ...prev,
-            [dateStr]: { ...prev[dateStr], mood: value, ...updated }
-          }));
-        }
-      } else {
-        // Condition A: New Mood
-        const newMood = await logMood(value, dateStr);
-        setMoods(prev => ({
-          ...prev,
-          [dateStr]: { ...newMood, mood: value, date: dateStr }
-        }));
-      }
-
+      const newMood = await logMood(value, dateStr);
+      setMoods(prev => {
+        const existing = prev[dateStr] || [];
+        return { ...prev, [dateStr]: [...existing, { ...newMood, mood: value, date: dateStr }] };
+      });
       setSubmitted(true);
       setTimeout(() => {
         onSubmit?.({ mood: value, date: dateStr });
@@ -161,32 +152,82 @@ export default function MoodTracker({ onClose, onSubmit }) {
       }, 1000);
     } catch (err) {
       console.error("Failed to log mood:", err);
+      const errMsg = err?.response?.data?.message || err?.message || "Failed to save mood. Please try again.";
+      setFormError(errMsg);
+    }
+  }, [value, selectedDate, moods, onClose, onSubmit]);
+
+  const handleUpdateMood = useCallback(async () => {
+    if (!selectedDate) return;
+    const dateStr = formatDate(selectedDate);
+    const dayMoods = moods[dateStr] || [];
+    const moodToUpdate = dayMoods.slice().reverse().find(m => !m.isUpdated);
+    if (!moodToUpdate) return;
+    
+    setFormError(null);
+    try {
+      const moodId = moodToUpdate._id || moodToUpdate.id;
+      if (moodId) {
+        const updated = await updateMood(moodId, value);
+        setMoods(prev => {
+          const existing = prev[dateStr] || [];
+          const newArr = existing.map(m => (m._id === moodId || m.id === moodId) ? { ...m, mood: value, ...updated } : m);
+          return { ...prev, [dateStr]: newArr };
+        });
+        setSubmitted(true);
+        setTimeout(() => {
+          onSubmit?.({ mood: value, date: dateStr });
+          onClose?.();
+          setShowMoodForm(false);
+        }, 1000);
+      }
+    } catch (err) {
+      console.error("Failed to update mood:", err);
+      const errMsg = err?.response?.data?.message || err?.message || "Failed to update mood. Please try again.";
+      setFormError(errMsg);
     }
   }, [value, selectedDate, moods, onClose, onSubmit]);
 
   const handleDelete = useCallback(async () => {
     if (!selectedDate) return;
     const dateStr = formatDate(selectedDate);
-    const existingMood = moods[dateStr];
-
-    // Condition C: Delete Mood
-    if (existingMood) {
-      try {
-        const moodId = existingMood._id || existingMood.id;
-        if (moodId) {
-          await deleteMood(moodId);
-        }
-        setMoods(prev => {
-          const newMoods = { ...prev };
-          delete newMoods[dateStr];
-          return newMoods;
-        });
-        setShowMoodForm(false);
-      } catch (err) {
-        console.error("Failed to delete mood:", err);
+    const dayMoods = moods[dateStr] || [];
+    const moodToDelete = dayMoods[dayMoods.length - 1];
+    if (!moodToDelete) return;
+    
+    setFormError(null);
+    try {
+      const moodId = moodToDelete._id || moodToDelete.id;
+      if (moodId) {
+        await deleteMood(moodId);
       }
+      setMoods(prev => {
+        const existing = prev[dateStr] || [];
+        const newArr = existing.filter(m => m._id !== moodId && m.id !== moodId);
+        const newMoods = { ...prev };
+        if (newArr.length > 0) {
+          newMoods[dateStr] = newArr;
+        } else {
+          delete newMoods[dateStr];
+        }
+        return newMoods;
+      });
+      setDeleted(true);
+      setTimeout(() => {
+        setShowMoodForm(false);
+        setDeleted(false);
+      }, 1200);
+    } catch (err) {
+      console.error("Failed to delete mood:", err);
+      const errMsg = err?.response?.data?.message || err?.message || "Failed to delete mood. Please try again.";
+      setFormError(errMsg);
     }
   }, [selectedDate, moods]);
+
+  const dayMoodsArr = selectedDate ? (moods[formatDate(selectedDate)] || []) : [];
+  const editableMood = dayMoodsArr.slice().reverse().find(m => !m.isUpdated);
+  const isEditing = Boolean(editableMood);
+  const isFullyDone = dayMoodsArr.length >= 2;
 
   return (
     <>
@@ -226,7 +267,8 @@ export default function MoodTracker({ onClose, onSubmit }) {
                     const dateStr = formatDate(date);
                     const isToday = dateStr === todayStr;
                     const isFuture = dateStr > todayStr;
-                    const dayMoodData = moods[dateStr];
+                    const dayMoods = moods[dateStr] || [];
+                    const dayMoodData = dayMoods.length > 0 ? dayMoods[dayMoods.length - 1] : null;
                     const dayMood = dayMoodData ? MOODS.find(m => m.score === dayMoodData.mood) : null;
                     const dayName = date.toLocaleDateString("en-US", { weekday: 'short' });
 
@@ -240,17 +282,28 @@ export default function MoodTracker({ onClose, onSubmit }) {
                         <span className={`text-xs md:text-sm font-medium ${isToday ? 'text-white font-bold' : 'text-white/80'}`}>
                           {dayName}
                         </span>
-                        <div
-                          className={`w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all shadow-inner ${isToday ? 'ring-2 ring-white ring-offset-2 ring-offset-[#147E8F] dark:ring-offset-teal-950' : ''}`}
-                          style={{
-                            backgroundColor: dayMood ? dayMood.color : 'rgba(255, 255, 255, 0.15)',
-                            border: dayMood ? `2px solid ${dayMood.color}` : '2px solid transparent'
-                          }}
-                        >
-                          {dayMood ? (
-                            <span className="text-lg md:text-2xl drop-shadow-md">{dayMood.emoji}</span>
-                          ) : (
-                            <span className="text-white/50 text-xs md:text-base font-semibold">{date.getDate()}</span>
+                        <div className="relative">
+                          <div
+                            className={`w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all shadow-inner ${isToday ? 'ring-2 ring-white ring-offset-2 ring-offset-[#147E8F] dark:ring-offset-teal-950' : ''}`}
+                            style={{
+                              backgroundColor: dayMood ? dayMood.color : 'rgba(255, 255, 255, 0.15)',
+                              border: dayMood ? `2px solid ${dayMood.color}` : '2px solid transparent'
+                            }}
+                          >
+                            {dayMood ? (
+                              <span className="text-lg md:text-2xl drop-shadow-md">{dayMood.emoji}</span>
+                            ) : (
+                              <span className="text-white/50 text-xs md:text-base font-semibold">{date.getDate()}</span>
+                            )}
+                          </div>
+                          {!isFuture && (
+                            <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 p-0.5 flex items-center justify-center w-5 h-5 md:w-6 md:h-6 shadow-sm">
+                              <img 
+                                src={dayMoods.length >= 2 ? done : dayMoods.length === 1 ? hdone : ndone} 
+                                alt={dayMoods.length >= 2 ? "Done" : dayMoods.length === 1 ? "Half done" : "Not done"} 
+                                className={dayMoods.length >= 2 ? "w-2.5 h-2" : dayMoods.length === 1 ? "w-2.5 h-2" : "w-2.5 h-2.5"} 
+                              />
+                            </div>
                           )}
                         </div>
                       </div>
@@ -298,9 +351,24 @@ export default function MoodTracker({ onClose, onSubmit }) {
               </svg>
             </button>
 
-            <h2 className="text-xl md:text-[22px] font-bold text-slate-800 dark:text-slate-100 mb-6 leading-tight pr-8">
-              What is your mood for {selectedDate ? selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "today"}?
-            </h2>
+            {/* Header Section */}
+            <div className="flex items-center gap-4 mb-8 pr-8">
+              <div className={`flex items-center justify-center w-12 h-12 rounded-2xl shadow-sm ${isFullyDone ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/50' : 'bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 border border-teal-200 dark:border-teal-800/50'}`}>
+                {isFullyDone ? (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                ) : (
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                )}
+              </div>
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-100 leading-tight">
+                  {isFullyDone ? 'Mood Complete' : dayMoodsArr.length === 1 ? 'Log 2nd Mood' : 'Log 1st Mood'}
+                </h2>
+                <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 mt-0.5">
+                  {selectedDate ? selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" }) : "Today"}
+                </p>
+              </div>
+            </div>
 
             <div className="flex flex-col items-center gap-1.5 mb-8">
               {submitted ? (
@@ -310,6 +378,19 @@ export default function MoodTracker({ onClose, onSubmit }) {
                   </div>
                   <p className="text-xl md:text-[22px] font-bold" style={{ color: mood.color }}>Mood logged!</p>
                   <p className="text-[13px] text-slate-400 dark:text-slate-500">Have a great day</p>
+                </>
+              ) : deleted ? (
+                <>
+                  <div className="w-20 h-20 md:w-22 md:h-22 rounded-full bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-700 flex items-center justify-center mb-1">
+                    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#E24B4A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </div>
+                  <p className="text-xl md:text-[22px] font-bold text-red-500 dark:text-red-400">Mood Removed</p>
+                  <p className="text-[13px] text-slate-400 dark:text-slate-500">Entry deleted successfully</p>
                 </>
               ) : (
                 <>
@@ -382,28 +463,44 @@ export default function MoodTracker({ onClose, onSubmit }) {
               </div>
             </div>
 
-            <div className="flex gap-3">
-              {selectedDate && moods[formatDate(selectedDate)] && !submitted && (
+            {formError && (
+              <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-xl p-3 mb-4 text-center text-sm font-semibold">
+                {formError}
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-2">
+              {dayMoodsArr.length > 0 && !submitted && !deleted && (
                 <button
                   onClick={handleDelete}
-                  className="flex-1 py-3.5 md:py-4 rounded-2xl text-red-500 bg-red-50 dark:bg-red-900/20 text-sm md:text-base font-semibold transition-all hover:bg-red-100 dark:hover:bg-red-900/40 active:scale-[0.98]"
+                  className="flex-[0.8] py-3.5 md:py-4 rounded-2xl text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/30 text-sm md:text-base font-semibold transition-all hover:bg-red-100 dark:hover:bg-red-900/50 hover:border-red-200 dark:hover:border-red-800/50 active:scale-[0.98] flex flex-col items-center justify-center gap-1 leading-none"
                 >
-                  Delete
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                  <span className="text-[10px] md:text-xs">Delete Last</span>
+                </button>
+              )}
+              {isEditing && !submitted && !deleted && (
+                <button
+                  onClick={handleUpdateMood}
+                  className="flex-[1.2] py-3.5 md:py-4 rounded-2xl text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/30 text-sm md:text-base font-semibold transition-all hover:bg-amber-100 dark:hover:bg-amber-900/50 active:scale-[0.98] flex flex-col items-center justify-center gap-1 leading-none"
+                >
+                  <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  <span className="text-[10px] md:text-xs">Update Last</span>
                 </button>
               )}
               <button
-                onClick={handleSubmit}
-                disabled={submitted}
-                className="flex-[2] py-3.5 md:py-4 rounded-2xl text-white text-sm md:text-base font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed hover:-translate-y-0.5"
-                style={{ background: submitted ? "#ccc" : mood.color, cursor: submitted ? "default" : "pointer" }}
+                onClick={handleAddNewMood}
+                disabled={submitted || isFullyDone}
+                className="flex-[2] py-3.5 md:py-4 rounded-2xl text-white text-sm md:text-base font-semibold flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                style={{ background: submitted || isFullyDone ? "#1D9E75" : mood.color, cursor: submitted || isFullyDone ? "default" : "pointer", boxShadow: submitted || isFullyDone ? "none" : `0 10px 25px -5px ${mood.color}60` }}
               >
-                {!submitted && (
-                  <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" fill="#fff" stroke="none" />
+                {!submitted && !isFullyDone && (
+                  <svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
                 )}
-                {submitted ? "Saved!" : "Save Mood"}
+                {isFullyDone ? "Done for Today!" : submitted ? "Saved!" : dayMoodsArr.length === 1 ? "Add 2nd Mood" : "Add 1st Mood"}
               </button>
             </div>
           </div>

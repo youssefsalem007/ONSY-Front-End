@@ -123,10 +123,10 @@ export default function EMotiv() {
 
         {/* CTAs */}
         <div className="relative flex flex-wrap gap-4 justify-center mb-16">
-          <button className="group px-8 py-3.5 rounded-2xl bg-gradient-to-r from-teal-600 to-cyan-500 text-white font-bold text-sm shadow-lg shadow-teal-300 dark:shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-300 dark:hover:shadow-teal-500/50 hover:-translate-y-0.5 transition-all duration-300">
+          <a href='https://www.emotiv.com/?srsltid=AfmBOopdt4WsfIppifDnu2PH7Rztn_n2k6PpZUsuq__HaLkFLN4nXnCJ' target='_blank' className="group px-8 py-3.5 rounded-2xl bg-gradient-to-r from-teal-600 to-cyan-500 text-white font-bold text-sm shadow-lg shadow-teal-300 dark:shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-300 dark:hover:shadow-teal-500/50 hover:-translate-y-0.5 transition-all duration-300">
             Pre-Order Now
             <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
-          </button>
+          </a>
           <button className="px-8 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm bg-white dark:bg-transparent hover:border-teal-400 dark:hover:border-teal-500/50 hover:text-teal-700 dark:hover:text-white hover:bg-teal-50 dark:hover:bg-teal-500/5 transition-all duration-300 shadow-sm">
             Watch Demo
           </button>

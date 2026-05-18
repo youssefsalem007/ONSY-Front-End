@@ -247,7 +247,7 @@ export default function Profile() {
     ? `${profile.firstName?.[0] || ''}${profile.lastName?.[0] || ''}`.toUpperCase() || '?'
     : '?';
 
-  const genderOptions = ['male', 'female', 'other', 'prefer not to say'];
+  const genderOptions = ['male', 'female'];
 
   return (
     <>
