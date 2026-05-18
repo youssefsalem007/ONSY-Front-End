@@ -12,6 +12,7 @@ import Loading from './Loading';
 
 const SingIn = () => {
   const [isError, setError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +28,7 @@ const SingIn = () => {
 
   async function onSubmitForm(data) {
     setError(false);
+    setErrorMessage("");
     try {
       await loginUser(data);
       toast.success("Welcome back!");
@@ -36,16 +38,27 @@ const SingIn = () => {
       }, 1500);
     } catch (err) {
       setError(true);
-      const errorMessage = err.response?.data?.message || "Invalid email or password";
-      const lowCaseMessage = errorMessage.toLowerCase();
-      if (lowCaseMessage.includes("password")) {
-        setFormFieldError("password", { type: "manual", message: errorMessage });
-      } 
-      else if (lowCaseMessage.includes("email") || lowCaseMessage.includes("user") || lowCaseMessage.includes("not found")) {
-        setFormFieldError("email", { type: "manual", message: errorMessage });
-      } 
-      else {
-        toast.error(errorMessage);
+      // Try multiple response formats from backend
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.response?.data?.msg ||
+        (typeof err.response?.data === "string" ? err.response.data : null) ||
+        "البريد الإلكتروني أو كلمة المرور غير صحيحة";
+      const lowCaseMessage = msg.toLowerCase();
+      if (lowCaseMessage.includes("password") || lowCaseMessage.includes("كلمة المرور")) {
+        setFormFieldError("password", { type: "manual", message: msg });
+        setErrorMessage(msg);
+      } else if (
+        lowCaseMessage.includes("email") ||
+        lowCaseMessage.includes("user") ||
+        lowCaseMessage.includes("not found") ||
+        lowCaseMessage.includes("البريد")
+      ) {
+        setFormFieldError("email", { type: "manual", message: msg });
+        setErrorMessage(msg);
+      } else {
+        setErrorMessage(msg);
       }
     }
   }
@@ -81,6 +94,16 @@ const SingIn = () => {
               Continue your mental wellness journey
             </p>
           </div>
+
+          {/* General Error Banner */}
+          {isError && errorMessage && (
+            <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl px-4 py-3 animate-[fadeIn_0.3s_ease-out]">
+              <svg className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <p className="text-red-600 dark:text-red-400 text-sm font-medium">{errorMessage}</p>
+            </div>
+          )}
 
           <div className="flex flex-col gap-5">
             {/* Email Field */}

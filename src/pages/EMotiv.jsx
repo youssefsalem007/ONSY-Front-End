@@ -127,9 +127,6 @@ export default function EMotiv() {
             Pre-Order Now
             <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
           </a>
-          <button className="px-8 py-3.5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-sm bg-white dark:bg-transparent hover:border-teal-400 dark:hover:border-teal-500/50 hover:text-teal-700 dark:hover:text-white hover:bg-teal-50 dark:hover:bg-teal-500/5 transition-all duration-300 shadow-sm">
-            Watch Demo
-          </button>
         </div>
 
         {/* Device placeholder */}
