@@ -7,6 +7,7 @@ import victor4 from '../assets/Vector4.png'
 import victor5 from '../assets/Vector5.png'
 import arrow from '../assets/mdi_arrow.png'
 import { useNavigate } from 'react-router-dom';
+import { aiService } from '../services/aiService';
 
 const SUGGESTIONS = [
   "How am I feeling today?",
@@ -17,17 +18,7 @@ const SUGGESTIONS = [
   "Sleep tips for tonight",
 ];
 
-const MOCK_AI_RESPONSES = [
-  "That's a great question. Let me help you with that.",
-  "I understand how you feel. Take a deep breath.",
-  "Here is a mock response to test the UI! 😊",
-  "It's completely normal to feel that way. I'm here for you.",
-  "Let's break this down together step by step.",
-  "That sounds challenging. Do you want to talk more about it?",
-  "I'm here to listen. Tell me more about what's going on.",
-  "Remember to be kind to yourself today. You are doing your best.",
-  "Here's a quick exercise: Name 3 things you can see, 2 things you can hear, and 1 thing you can touch."
-];
+
 
 const customStyles = `
 @keyframes blink {
@@ -115,6 +106,14 @@ const SpeakChatBot = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const [chatHistory, setChatHistory] = useState([]);
+
+  useEffect(() => {
+    aiService.getAllSessions().then(data => {
+      if(Array.isArray(data)) setChatHistory(data);
+    }).catch(console.error);
+  }, []);
 
   const bottomRef = useRef(null);
   const textareaRef = useRef(null);
@@ -146,7 +145,7 @@ const SpeakChatBot = () => {
     }
   }, [input]);
 
-  const sendMessage = useCallback((text) => {
+  const sendMessage = useCallback(async (text) => {
     const content = (text || input).trim();
     if (!content || loading) return;
 
@@ -161,20 +160,41 @@ const SpeakChatBot = () => {
     setMessages(prev => [...prev, userMsg]);
     setLoading(true);
 
-    const delay = Math.floor(Math.random() * 500) + 1500;
-    setTimeout(() => {
-      const randomResponse = MOCK_AI_RESPONSES[Math.floor(Math.random() * MOCK_AI_RESPONSES.length)];
+    try {
+      const response = await aiService.sendMessage(content, sessionId);
       const aiMsg = {
         _id: `msg-${Date.now() + 1}`,
         role: "ai",
-        content: randomResponse,
+        content: response.reply,
         sent_at: new Date().toISOString(),
       };
 
+      if (response.sessionId && response.sessionId !== sessionId) {
+        setSessionId(response.sessionId);
+        aiService.getAllSessions().then(data => {
+          if(Array.isArray(data)) setChatHistory(data);
+        }).catch(console.error);
+      }
+
       setMessages(prev => [...prev, aiMsg]);
+    } catch (err) {
+      console.error(err);
+      let errorMessage = err.response?.data?.message || err.message || "Something went wrong";
+      if (err.response?.status === 500 && errorMessage.includes('status code 401')) {
+        errorMessage = "My AI engine is currently disconnected. (The GROQ_API_KEY in the Vercel backend environment appears to be invalid or expired).";
+      }
+
+      const errorMsg = {
+        _id: `msg-${Date.now() + 1}`,
+        role: "ai",
+        content: `Sorry, I encountered an error: ${errorMessage}`,
+        sent_at: new Date().toISOString(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
       setLoading(false);
-    }, delay);
-  }, [input, loading]);
+    }
+  }, [input, loading, sessionId]);
 
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -232,6 +252,7 @@ const SpeakChatBot = () => {
               className="will-change-transform pl-4 text-slate-700 dark:text-slate-200 flex content-center items-center gap-3 h-11 w-full border border-[#036464] dark:border-teal-700 rounded-2xl cursor-pointer bg-transparent hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-all duration-200"
               onClick={() => {
                 setMessages([]);
+                setSessionId(null);
                 if (window.innerWidth < 1024) setSidebarOpen(false);
               }}
             >
@@ -296,15 +317,30 @@ const SpeakChatBot = () => {
 
             <motion.div variants={itemVariants} className="flex flex-col gap-4 w-full mt-4">
               <p className="flex justify-between text-lg font-semibold text-slate-800 dark:text-slate-200 pb-1">Chat history <img src={arrow} alt="" /></p>
-              <motion.p whileHover={{ x: 5 }} className="flex gap-1.5 cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-sm transition-colors">
-                <img src={arrow} alt="" />You shared your feelings
-              </motion.p>
-              <motion.p whileHover={{ x: 5 }} className="flex gap-1.5 cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-sm transition-colors">
-                <img src={arrow} alt="" />You talked about stress
-              </motion.p>
-              <motion.p whileHover={{ x: 5 }} className="flex gap-1.5 cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-sm transition-colors">
-                <img src={arrow} alt="" />You checked your mood
-              </motion.p>
+              {chatHistory.slice(0, 5).map(session => (
+                <motion.p 
+                  key={session.id} 
+                  whileHover={{ x: 5 }} 
+                  className="flex gap-1.5 cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-sm transition-colors whitespace-nowrap overflow-hidden text-ellipsis" 
+                  onClick={async () => {
+                   try {
+                     const s = await aiService.getSession(session.id);
+                     setSessionId(session.id);
+                     setMessages(s.messages.map((m, i) => ({
+                       _id: `msg-${session.id}-${i}`,
+                       role: m.role === 'assistant' ? 'ai' : 'user',
+                       content: m.content,
+                       sent_at: s.updatedAt 
+                     })));
+                     if (window.innerWidth < 1024) setSidebarOpen(false);
+                   } catch (e) {
+                     console.error(e);
+                   }
+                }}>
+                  <img src={arrow} alt="" className="shrink-0" />
+                  <span className="truncate">{session.preview || "New Session"}</span>
+                </motion.p>
+              ))}
             </motion.div>
           </div>
 
