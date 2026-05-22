@@ -99,7 +99,7 @@ const Hero1 = () => {
             </button>
 
             <button
-              onClick={() => navigate("/SignIn")}
+              onClick={() => navigate("/EMotiv")}
               className="cursor-pointer inline-flex items-center justify-center gap-2 rounded-2xl border border-teal-200 dark:border-teal-700 bg-white/60 dark:bg-slate-800/60 backdrop-blur-sm px-8 py-3.5 text-base font-semibold text-teal-700 dark:text-teal-300 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-teal-400 dark:hover:border-teal-500 hover:bg-white dark:hover:bg-slate-800 hover:shadow-md active:translate-y-0 max-md:w-full"
             >
               Learn More
