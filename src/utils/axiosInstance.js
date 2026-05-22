@@ -2,7 +2,7 @@ import axios from 'axios';
 import { getToken, removeToken } from './cookieUtils';
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL || 'https://onsy-backend.vercel.app',
   headers: {
     'Content-Type': 'application/json',
   },
