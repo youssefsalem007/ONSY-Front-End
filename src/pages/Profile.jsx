@@ -57,8 +57,8 @@ const Toast = ({ message, type, onDone }) => {
 
   const colors = {
     success: 'bg-teal-500 text-white',
-    error:   'bg-red-500 text-white',
-    info:    'bg-slate-700 text-white',
+    error: 'bg-red-500 text-white',
+    info: 'bg-slate-700 text-white',
   };
   return (
     <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] px-6 py-3 rounded-2xl shadow-xl text-sm font-semibold animate-fade-in-up ${colors[type] || colors.info}`}>
@@ -76,7 +76,7 @@ const Skeleton = ({ className }) => (
 const SectionCard = ({ icon, title, children, accent = 'teal' }) => {
   const ring = accent === 'red' ? 'ring-red-200 dark:ring-red-900/40' : 'ring-teal-200/60 dark:ring-teal-700/30';
   return (
-    <motion.div 
+    <motion.div
       variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
       className={`bg-white dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl ring-1 ${ring} shadow-lg shadow-black/[0.04] dark:shadow-black/20 p-6 md:p-8 transition-colors duration-300`}
     >
@@ -143,13 +143,13 @@ export default function Profile() {
   const navigate = useNavigate();
 
   /* profile data */
-  const [profile, setProfile]   = useState(null);
+  const [profile, setProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [profileErr, setProfileErr]         = useState('');
+  const [profileErr, setProfileErr] = useState('');
 
   /* edit-info state */
   const [editMode, setEditMode] = useState(false);
-  const [form, setForm]         = useState({ firstName: '', lastName: '', gender: '', age: '' });
+  const [form, setForm] = useState({ firstName: '', lastName: '', gender: '', age: '' });
   const [savingInfo, setSavingInfo] = useState(false);
 
   /* avatar state */
@@ -163,7 +163,7 @@ export default function Profile() {
 
   /* delete-account */
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [deletingAcc, setDeletingAcc]         = useState(false);
+  const [deletingAcc, setDeletingAcc] = useState(false);
 
   /* toast */
   const [toast, setToast] = useState(null);
@@ -176,14 +176,14 @@ export default function Profile() {
       const data = await getProfile();
       const p = data?.data || data;
       setProfile(p);
-      
-      const localAvatar = localStorage.getItem('profileAvatar');
+
+      const localAvatar = localStorage.getItem(`profileAvatar_${p.email}`);
       setAvatarPreview(localAvatar || p?.profilePic || p?.avatar || p?.profileImage || null);
       setForm({
         firstName: p?.firstName || '',
-        lastName:  p?.lastName  || '',
-        gender:    p?.gender    || '',
-        age:       p?.age != null ? String(p.age) : '',
+        lastName: p?.lastName || '',
+        gender: p?.gender || '',
+        age: p?.age != null ? String(p.age) : '',
       });
     } catch (err) {
       console.error(err);
@@ -203,7 +203,9 @@ export default function Profile() {
       reader.onloadend = () => {
         const base64String = reader.result;
         try {
-          localStorage.setItem('profileAvatar', base64String);
+          if (profile?.email) {
+            localStorage.setItem(`profileAvatar_${profile.email}`, base64String);
+          }
           setAvatarPreview(base64String);
           showToast('Profile picture saved locally!', 'success');
         } catch (error) {
@@ -216,7 +218,9 @@ export default function Profile() {
   };
 
   const handleRemoveImage = () => {
-    localStorage.removeItem('profileAvatar');
+    if (profile?.email) {
+      localStorage.removeItem(`profileAvatar_${profile.email}`);
+    }
     setAvatarPreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     showToast('Profile picture removed!', 'info');
@@ -227,9 +231,9 @@ export default function Profile() {
       setSavingInfo(true);
       const payload = {
         firstName: form.firstName,
-        lastName:  form.lastName,
-        gender:    form.gender,
-        age:       form.age ? Number(form.age) : undefined,
+        lastName: form.lastName,
+        gender: form.gender,
+        age: form.age ? Number(form.age) : undefined,
       };
 
       await updateProfile(payload);
@@ -299,7 +303,7 @@ export default function Profile() {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300 pt-24 pb-16 px-4 md:px-8">
 
         {/* ── hero / avatar strip ── */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
           className="max-w-3xl mx-auto mb-8"
         >
@@ -324,7 +328,7 @@ export default function Profile() {
               {/* Hover overlay for changing picture */}
               {!loadingProfile && (
                 <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
+                  <button
                     onClick={() => fileInputRef.current?.click()}
                     className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors cursor-pointer text-white"
                     title="Change Picture"
@@ -332,7 +336,7 @@ export default function Profile() {
                     <CameraIcon />
                   </button>
                   {avatarPreview && (
-                    <button 
+                    <button
                       onClick={handleRemoveImage}
                       className="p-2 bg-red-500/80 hover:bg-red-500 rounded-full transition-colors cursor-pointer text-white"
                       title="Remove Picture"
@@ -343,12 +347,12 @@ export default function Profile() {
                 </div>
               )}
             </div>
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleImageChange} 
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageChange}
             />
 
             {/* name + email */}
@@ -382,7 +386,7 @@ export default function Profile() {
           </div>
         )}
 
-        <motion.div 
+        <motion.div
           initial="hidden" animate="visible"
           variants={{
             hidden: { opacity: 0 },
