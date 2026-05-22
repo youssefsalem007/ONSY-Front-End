@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { getProfile, updateProfile, changePassword, deleteAccount } from '../services/profileService';
@@ -39,6 +39,12 @@ const EyeIcon = ({ open }) => open ? (
     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
     <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
     <line x1="1" y1="1" x2="23" y2="23" />
+  </svg>
+);
+const CameraIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+    <circle cx="12" cy="13" r="4" />
   </svg>
 );
 
@@ -146,6 +152,10 @@ export default function Profile() {
   const [form, setForm]         = useState({ firstName: '', lastName: '', gender: '', age: '' });
   const [savingInfo, setSavingInfo] = useState(false);
 
+  /* avatar state */
+  const fileInputRef = useRef(null);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+
   /* change-password state */
   const [pwForm, setPwForm] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
   const [pwErrors, setPwErrors] = useState({});
@@ -166,6 +176,9 @@ export default function Profile() {
       const data = await getProfile();
       const p = data?.data || data;
       setProfile(p);
+      
+      const localAvatar = localStorage.getItem('profileAvatar');
+      setAvatarPreview(localAvatar || p?.profilePic || p?.avatar || p?.profileImage || null);
       setForm({
         firstName: p?.firstName || '',
         lastName:  p?.lastName  || '',
@@ -183,6 +196,32 @@ export default function Profile() {
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
 
   /* ── save profile info ── */
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        try {
+          localStorage.setItem('profileAvatar', base64String);
+          setAvatarPreview(base64String);
+          showToast('Profile picture saved locally!', 'success');
+        } catch (error) {
+          console.error("Local storage error:", error);
+          showToast('Image is too large to save locally.', 'error');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    localStorage.removeItem('profileAvatar');
+    setAvatarPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    showToast('Profile picture removed!', 'info');
+  };
+
   const handleSaveInfo = async () => {
     try {
       setSavingInfo(true);
@@ -192,6 +231,7 @@ export default function Profile() {
         gender:    form.gender,
         age:       form.age ? Number(form.age) : undefined,
       };
+
       await updateProfile(payload);
       setProfile(prev => ({ ...prev, ...payload }));
       setEditMode(false);
@@ -272,12 +312,44 @@ export default function Profile() {
             </div>
 
             {/* avatar */}
-            <div className="relative z-10 flex-shrink-0 w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center shadow-inner">
-              {loadingProfile
-                ? <div className="animate-pulse w-full h-full rounded-full bg-white/30" />
-                : <span className="text-3xl font-bold text-white tracking-wide">{initials}</span>
-              }
+            <div className="relative z-10 flex-shrink-0 w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center shadow-inner group">
+              {loadingProfile ? (
+                <div className="animate-pulse w-full h-full rounded-full bg-white/30" />
+              ) : avatarPreview ? (
+                <img src={avatarPreview} alt="Profile" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <span className="text-3xl font-bold text-white tracking-wide">{initials}</span>
+              )}
+
+              {/* Hover overlay for changing picture */}
+              {!loadingProfile && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors cursor-pointer text-white"
+                    title="Change Picture"
+                  >
+                    <CameraIcon />
+                  </button>
+                  {avatarPreview && (
+                    <button 
+                      onClick={handleRemoveImage}
+                      className="p-2 bg-red-500/80 hover:bg-red-500 rounded-full transition-colors cursor-pointer text-white"
+                      title="Remove Picture"
+                    >
+                      <TrashIcon />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleImageChange} 
+            />
 
             {/* name + email */}
             <div className="relative z-10 text-center sm:text-left">
