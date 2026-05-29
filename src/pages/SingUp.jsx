@@ -19,7 +19,7 @@ const SignUp = () => {
 
   const { register, handleSubmit, setError: setFormError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
-    defaultValues: { firstName:"", lastName:"", email:"", dateOfBirth:"", gender:"", password:"", confirmPassword:"" },
+    defaultValues: { firstName: "", lastName: "", email: "", dateOfBirth: "", gender: "", password: "", confirmPassword: "" },
     mode: 'onBlur'
   });
 
@@ -31,24 +31,85 @@ const SignUp = () => {
   };
 
   async function onSubmitForm(data) {
-    setError(false); 
+    setError(false);
     try {
       const finalData = { firstName: data.firstName, lastName: data.lastName, email: data.email, age: calculateAge(data.dateOfBirth), gender: data.gender, password: data.password, confirmPassword: data.confirmPassword };
       const result = await registerUser(finalData);
       toast.success("Account created successfully!");
-      navigate('/verification', { state: { email: finalData.email } }); 
+      navigate('/verification', { state: { email: finalData.email } });
       console.log("Success Result:", result);
     } catch (err) {
       setError(true);
-      const errorMessage = err.response?.data?.message || "Something went wrong!";
-      const lowCaseMsg = errorMessage.toLowerCase();
-      if (lowCaseMsg.includes("email") || lowCaseMsg.includes("exists") || lowCaseMsg.includes("used")) {
-        setFormError("email", { type: "manual", message: errorMessage });
-      } else if (err.response?.data?.errors) {
-        Object.keys(err.response.data.errors).forEach((key) => { setFormError(key, { type: "manual", message: err.response.data.errors[key] }); });
-      } else {
-        toast.error(errorMessage);
+      const responseData = err.response?.data;
+      const rawMsg = responseData?.message || "Something went wrong!";
+      let mainErrorMsg = "";
+
+      // Helper function to translate error messages to English for Sign Up
+      function translateSignUpError(message, field = "") {
+        const lowMessage = String(message).toLowerCase();
+        
+        if (
+          (lowMessage.includes("email") && (lowMessage.includes("exist") || lowMessage.includes("use") || lowMessage.includes("take"))) ||
+          lowMessage.includes("مسجل بالفعل") ||
+          lowMessage.includes("مستخدم بالفعل")
+        ) {
+          return "This email address is already registered.";
+        }
+        if (lowMessage.includes("email") || lowMessage.includes("البريد")) {
+          return "Please enter a valid email address.";
+        }
+        if (
+          lowMessage.includes("password") ||
+          lowMessage.includes("كلمة المرور") ||
+          lowMessage.includes("كلمه المرور") ||
+          lowMessage.includes("الرمز السري")
+        ) {
+          return "Password must be at least 8 characters and meet all requirements.";
+        }
+        if (lowMessage.includes("required") || lowMessage.includes("مطلوب")) {
+          const fieldName = field ? (field.charAt(0).toUpperCase() + field.slice(1)) : "Field";
+          return `${fieldName} is required.`;
+        }
+        return message;
       }
+
+      // Check if there are field-specific errors in array or object format
+      if (responseData?.errors) {
+        const errors = responseData.errors;
+
+        if (Array.isArray(errors)) {
+          errors.forEach((errItem) => {
+            const field = errItem.param || errItem.field || (errItem.path && errItem.path[0]) || "";
+            const rawVal = errItem.msg || errItem.message || "";
+            if (field && rawVal) {
+              const englishVal = translateSignUpError(rawVal, field);
+              setFormError(field, { type: "manual", message: englishVal });
+              if (!mainErrorMsg) mainErrorMsg = englishVal;
+            }
+          });
+        } else if (typeof errors === "object") {
+          Object.keys(errors).forEach((key) => {
+            const errVal = errors[key];
+            const rawVal = typeof errVal === "object" ? (errVal.message || errVal.msg) : errVal;
+            if (rawVal) {
+              const englishVal = translateSignUpError(rawVal, key);
+              setFormError(key, { type: "manual", message: englishVal });
+              if (!mainErrorMsg) mainErrorMsg = englishVal;
+            }
+          });
+        }
+      }
+
+      // If no field-specific error was matched, show the toast/general error
+      if (!mainErrorMsg) {
+        if (String(rawMsg).toLowerCase().includes("validation")) {
+          mainErrorMsg = "Please verify the information you entered.";
+        } else {
+          mainErrorMsg = translateSignUpError(rawMsg);
+        }
+      }
+
+      toast.error(mainErrorMsg);
       console.error("API Error:", err);
     }
   }
@@ -130,7 +191,7 @@ const SignUp = () => {
                 </div>
                 <img src={aro} className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" alt="arrow" />
               </div>
-              <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting} className={`w-full h-11 rounded-xl bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white font-bold text-sm shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5 transition-all duration-300 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}>           
+              <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting} className={`w-full h-11 rounded-xl bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white font-bold text-sm shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5 transition-all duration-300 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}>
                 {isSubmitting ? "Creating Account..." : "Continue"}
               </Button>
             </div>

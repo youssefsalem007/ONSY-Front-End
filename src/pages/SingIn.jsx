@@ -32,56 +32,111 @@ const SingIn = () => {
     try {
       await loginUser(data);
       toast.success("Welcome back!");
-      setLoading(true); 
+      setLoading(true);
       setTimeout(() => {
         navigate("/");
       }, 1500);
     } catch (err) {
       setError(true);
-      // Try multiple response formats from backend
-      const msg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.response?.data?.msg ||
-        (typeof err.response?.data === "string" ? err.response.data : null) ||
-        "البريد الإلكتروني أو كلمة المرور غير صحيحة";
-      const lowCaseMessage = msg.toLowerCase();
-      if (lowCaseMessage.includes("password") || lowCaseMessage.includes("كلمة المرور")) {
-        setFormFieldError("password", { type: "manual", message: msg });
-        setErrorMessage(msg);
-      } else if (
-        lowCaseMessage.includes("email") ||
-        lowCaseMessage.includes("user") ||
-        lowCaseMessage.includes("not found") ||
-        lowCaseMessage.includes("البريد")
-      ) {
-        setFormFieldError("email", { type: "manual", message: msg });
-        setErrorMessage(msg);
-      } else {
-        setErrorMessage(msg);
+      const responseData = err.response?.data;
+      const rawMsg =
+        responseData?.message ||
+        responseData?.error ||
+        responseData?.msg ||
+        (typeof responseData === "string" ? responseData : null) ||
+        "Incorrect email or password";
+
+      let mainErrorMsg = "";
+
+      // Helper function to translate error messages to English
+      function translateErrorMessage(message, field = "") {
+        const lowMessage = String(message).toLowerCase();
+        if (
+          lowMessage.includes("password") ||
+          lowMessage.includes("كلمة المرور") ||
+          lowMessage.includes("كلمه المرور") ||
+          lowMessage.includes("مرور") ||
+          lowMessage.includes("الرمز السري")
+        ) {
+          return "Incorrect password. Please try again.";
+        }
+        if (
+          lowMessage.includes("email not found") ||
+          lowMessage.includes("user not found") ||
+          lowMessage.includes("غير مسجل") ||
+          lowMessage.includes("غير موجود") ||
+          lowMessage.includes("المستخدم غير موجود")
+        ) {
+          return "Email address not found.";
+        }
+        if (
+          lowMessage.includes("email") ||
+          lowMessage.includes("البريد")
+        ) {
+          return "Please enter a valid or registered email.";
+        }
+        return message;
       }
+
+      // Check if there are field-specific errors in array or object format
+      if (responseData?.errors) {
+        const errors = responseData.errors;
+
+        if (Array.isArray(errors)) {
+          errors.forEach((errItem) => {
+            const field = errItem.param || errItem.field || (errItem.path && errItem.path[0]) || "";
+            const rawVal = errItem.msg || errItem.message || "";
+            if (field && rawVal) {
+              const englishVal = translateErrorMessage(rawVal, field);
+              setFormFieldError(field, { type: "manual", message: englishVal });
+              if (!mainErrorMsg) mainErrorMsg = englishVal;
+            }
+          });
+        } else if (typeof errors === "object") {
+          Object.keys(errors).forEach((key) => {
+            const errVal = errors[key];
+            const rawVal = typeof errVal === "object" ? (errVal.message || errVal.msg) : errVal;
+            if (rawVal) {
+              const englishVal = translateErrorMessage(rawVal, key);
+              setFormFieldError(key, { type: "manual", message: englishVal });
+              if (!mainErrorMsg) mainErrorMsg = englishVal;
+            }
+          });
+        }
+      }
+
+      // If no field errors were processed or we still need a main error banner
+      if (!mainErrorMsg) {
+        if (String(rawMsg).toLowerCase().includes("validation")) {
+          mainErrorMsg = "Incorrect email or password.";
+        } else {
+          mainErrorMsg = translateErrorMessage(rawMsg);
+        }
+      }
+
+      setErrorMessage(mainErrorMsg);
     }
   }
 
   if (loading) {
     return (
-        <Loading 
-            head={"You're now logged in."}
-            prag={"Taking you home…"} 
-        />
+      <Loading
+        head={"You're now logged in."}
+        prag={"Taking you home…"}
+      />
     );
-  } 
+  }
 
   return (
     <>
       <section className="h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-teal-50/60 dark:from-slate-950 dark:via-slate-900 dark:to-teal-950/20 px-4 pt-20 pb-4 sm:px-6 lg:px-8 transition-colors duration-300 overflow-hidden">
-        
+
         <form
           onSubmit={handleSubmit(onSubmitForm)}
           className="w-full max-w-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-[0_8px_40px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] border border-slate-100 dark:border-slate-700/60 flex flex-col gap-4 transition-all duration-300 hover:shadow-[0_8px_50px_rgb(0,0,0,0.09)] dark:hover:shadow-[0_8px_50px_rgb(0,0,0,0.4)]"
         >
           {/* Brand Header */}
-          <div className="text-teal-600 dark:text-teal-400 font-bold text-3xl sm:text-4xl text-center tracking-tight">
+          <div className="text-teal-600 dark:text-teal-400 font-labrada font-bold text-3xl sm:text-4xl text-center tracking-tight">
             ONSY
           </div>
 
@@ -111,11 +166,11 @@ const SingIn = () => {
               <Label htmlFor="email" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
                 Email address
               </Label>
-              <Input 
-                {...register("email")} 
-                type="email" 
-                className="w-full px-4 py-3 h-auto text-base rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 focus:bg-white dark:focus:bg-slate-700 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-4 focus:ring-teal-500/10 dark:focus:ring-teal-400/10 outline-none transition-all duration-300 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" 
-                placeholder="your@email.com" 
+              <Input
+                {...register("email")}
+                type="email"
+                className="w-full px-4 py-3 h-auto text-base rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 focus:bg-white dark:focus:bg-slate-700 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-4 focus:ring-teal-500/10 dark:focus:ring-teal-400/10 outline-none transition-all duration-300 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                placeholder="your@email.com"
               />
               {errors.email && (
                 <p className="text-red-500 dark:text-red-400 text-sm mt-1.5 font-medium animate-pulse">
@@ -125,23 +180,23 @@ const SingIn = () => {
             </div>
 
             {/* Password Field */}
-            <div className="w-full"> 
+            <div className="w-full">
               <Label htmlFor="password" title="password" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
                 Password
               </Label>
               <div className="relative">
-                <Input 
-                  {...register("password")} 
-                  type={showPassword ? "text" : "password"} 
-                  className="w-full px-4 py-3 h-auto text-base rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 focus:bg-white dark:focus:bg-slate-700 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-4 focus:ring-teal-500/10 dark:focus:ring-teal-400/10 outline-none transition-all duration-300 text-slate-800 dark:text-slate-100 pr-16 placeholder:text-slate-400 dark:placeholder:text-slate-500" 
-                  placeholder="••••••••" 
+                <Input
+                  {...register("password")}
+                  type={showPassword ? "text" : "password"}
+                  className="w-full px-4 py-3 h-auto text-base rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 focus:bg-white dark:focus:bg-slate-700 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-4 focus:ring-teal-500/10 dark:focus:ring-teal-400/10 outline-none transition-all duration-300 text-slate-800 dark:text-slate-100 pr-16 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-300 focus:outline-none"
                 >
-                  {showPassword ? "Hide" : "Show"} 
+                  {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
               {errors.password && (
@@ -153,24 +208,24 @@ const SingIn = () => {
 
             {/* Forgot Password */}
             <div className="flex justify-end -mt-2">
-              <span 
-                onClick={() => navigate("/ForgetP")} 
+              <span
+                onClick={() => navigate("/ForgetP")}
                 className="text-sm font-semibold text-teal-600 dark:text-teal-400 cursor-pointer hover:text-teal-800 dark:hover:text-teal-300 transition-colors duration-300"
               >
                 Forgot password?
               </span>
             </div>
-            
+
             {/* Submit Button */}
-            <Button 
-              type="submit" 
-              isLoading={isSubmitting} 
+            <Button
+              type="submit"
+              isLoading={isSubmitting}
               disabled={isSubmitting}
               className={`w-full h-11 bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white rounded-xl font-bold text-base shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5 transition-all duration-300 ease-out flex justify-center items-center ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
-            >          
+            >
               {isSubmitting ? "Loading..." : "Log in"}
             </Button>
-            
+
             {/* Divider */}
             <div className="flex items-center justify-center gap-4">
               <div className="h-px bg-slate-200 dark:bg-slate-600 flex-1"></div>
@@ -193,8 +248,8 @@ const SingIn = () => {
           {/* Signup Link */}
           <p className="text-slate-500 dark:text-slate-400 text-center text-sm font-medium">
             Don't have an account?{' '}
-            <Link 
-              to={'/SignUp'} 
+            <Link
+              to={'/SignUp'}
               className="text-teal-600 dark:text-teal-400 font-bold hover:text-teal-800 dark:hover:text-teal-300 hover:underline underline-offset-4 transition-all duration-300"
             >
               Sign up

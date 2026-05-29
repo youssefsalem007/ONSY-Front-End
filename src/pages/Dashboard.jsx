@@ -188,9 +188,125 @@ const Dashboard = () => {
   }, [analysisTimestamp]);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center dark:bg-slate-900">
-      <span className="text-teal-600 font-bold text-xl animate-pulse">Loading Analysis Dashboard...</span>
-    </div>;
+    return (
+      <section className="min-h-screen bg-[#FEFDFE] dark:bg-slate-900 transition-colors duration-300 py-24 px-5 sm:px-10 lg:px-16 xl:px-24 flex flex-col gap-10">
+        <div className="flex flex-col lg:flex-row lg:justify-between gap-10">
+
+          {/* ── Left Column Skeleton ── */}
+          <div className="flex flex-col gap-6 w-full lg:w-[48%]">
+
+            {/* Line Chart Card Skeleton */}
+            <div className="
+              w-full h-64 sm:h-80 lg:h-[400px]
+              bg-[#147E8F1A] dark:bg-teal-900/20
+              rounded-3xl
+              shadow-[0_0_40px_0_rgba(0,0,0,0.08)] dark:shadow-[0_0_40px_0_rgba(0,0,0,0.3)]
+              border border-teal-200/30 dark:border-teal-700/30
+              flex flex-col items-start justify-start
+              px-6 py-5 gap-4 overflow-hidden
+            ">
+              {/* Chart title */}
+              <div className="skeleton-shimmer h-4 w-48 rounded-full" />
+              {/* Fake chart bars */}
+              <div className="flex-1 w-full flex items-end gap-2 pb-2">
+                {[45, 65, 40, 75, 55, 80, 50, 70, 60, 85, 45, 65, 72, 50, 90, 60, 78, 55, 68, 40].map((h, i) => (
+                  <div
+                    key={i}
+                    className="skeleton-shimmer flex-1 rounded-t-md"
+                    style={{ height: `${h}%` }}
+                  />
+                ))}
+              </div>
+              {/* X-axis line */}
+              <div className="skeleton-shimmer h-[2px] w-full rounded-full opacity-50" />
+            </div>
+
+            {/* AI Recommendations Skeleton */}
+            <div className="w-full flex flex-col gap-4">
+              <div className="skeleton-shimmer h-7 w-52 rounded-full" />
+              <div className="flex flex-col gap-3 pl-2">
+                {[85, 70, 90, 60].map((w, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className="skeleton-shimmer w-2 h-2 rounded-full shrink-0" />
+                    <div className={`skeleton-shimmer h-3.5 rounded-full`} style={{ width: `${w}%` }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Right Column Skeleton ── */}
+          <div className="flex flex-col gap-6 w-full lg:w-[48%]">
+
+            {/* Gauge Card Skeleton */}
+            <div className="
+              w-full h-64 sm:h-80 lg:h-[400px]
+              bg-[#61847520] dark:bg-slate-800/40
+              rounded-3xl
+              shadow-[0_0_40px_0_rgba(0,0,0,0.08)] dark:shadow-[0_0_40px_0_rgba(0,0,0,0.3)]
+              border border-teal-200/20 dark:border-slate-700/50
+              flex flex-col items-center justify-center gap-5
+            ">
+              {/* Label above gauge */}
+              <div className="skeleton-shimmer h-4 w-40 rounded-full" />
+              {/* Circular gauge */}
+              <div className="relative w-40 h-40 sm:w-48 sm:h-48 lg:w-[230px] lg:h-[230px]">
+                <svg width="100%" height="100%" viewBox="0 0 230 230" className="opacity-30">
+                  <circle cx="115" cy="115" r="80" fill="none" stroke="rgba(20,126,143,0.25)" strokeWidth="30" />
+                </svg>
+                <svg width="100%" height="100%" viewBox="0 0 230 230" className="absolute inset-0">
+                  <circle cx="115" cy="115" r="80"
+                    fill="none" strokeWidth="30" strokeLinecap="butt"
+                    transform="rotate(-90, 115, 115)"
+                    className="skeleton-shimmer"
+                    style={{ stroke: 'url(#skeletonGrad)' }}
+                  />
+                  <defs>
+                    <linearGradient id="skeletonGrad" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="rgba(20,126,143,0.15)" />
+                      <stop offset="50%" stopColor="rgba(20,126,143,0.35)" />
+                      <stop offset="100%" stopColor="rgba(20,126,143,0.15)" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                {/* Center placeholder */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  <div className="skeleton-shimmer h-8 w-16 rounded-full" />
+                  <div className="skeleton-shimmer h-3 w-20 rounded-full" />
+                </div>
+              </div>
+            </div>
+
+            {/* Current Mental State Skeleton */}
+            <div className="w-full flex flex-col gap-4">
+              <div className="skeleton-shimmer h-7 w-56 rounded-full" />
+              <div className="flex flex-col gap-4 pl-2">
+                {[
+                  { label: 55, value: 38 },
+                  { label: 42, value: 62 },
+                  { label: 30, value: 45 },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="skeleton-shimmer w-2 h-2 rounded-full shrink-0" />
+                    <div className="flex gap-2 flex-wrap">
+                      <div className="skeleton-shimmer h-3.5 rounded-full" style={{ width: `${item.label * 0.8}px` }} />
+                      <div className="skeleton-shimmer h-3.5 rounded-full" style={{ width: `${item.value * 1}px` }} />
+                    </div>
+                  </div>
+                ))}
+                {/* Emotion chips row */}
+                <div className="flex flex-wrap gap-2 mt-1 pl-4">
+                  {[60, 72, 50, 68, 80].map((w, i) => (
+                    <div key={i} className="skeleton-shimmer h-6 rounded-md" style={{ width: `${w}px` }} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+    );
   }
 
   const result = latestAnalysis?.result || {};

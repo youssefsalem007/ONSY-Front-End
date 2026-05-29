@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import arrowl from "../assets/arrowl.png"
 import arrowr from "../assets/arrowr.png"
 import done from "../assets/done.png"
@@ -7,17 +8,17 @@ import ndone from "../assets/ndone.png"
 import { getAllMoods, logMood, updateMood, deleteMood } from "../services/moodService";
 
 const MOODS = [
-  { score: 0,  emoji: "😩", label: "Terrible",    sub: "Extremely distressed",   color: "#E24B4A" },
-  { score: 1,  emoji: "😞", label: "Very bad",    sub: "Feeling very down",      color: "#D85A30" },
-  { score: 2,  emoji: "😟", label: "Bad",         sub: "Not doing well",         color: "#EF9F27" },
-  { score: 3,  emoji: "😕", label: "Poor",        sub: "Struggling a bit",       color: "#BA7517" },
-  { score: 4,  emoji: "😐", label: "Low",         sub: "Below average day",      color: "#888780" },
-  { score: 5,  emoji: "🙂", label: "Okay",        sub: "Neither good nor bad",   color: "#5DCAA5" },
-  { score: 6,  emoji: "😊", label: "Good",        sub: "Feeling decent",         color: "#1D9E75" },
-  { score: 7,  emoji: "😄", label: "Pretty good", sub: "Having a good day",      color: "#1D9E75" },
-  { score: 8,  emoji: "😁", label: "Great",       sub: "Feeling really well",    color: "#0F6E56" },
-  { score: 9,  emoji: "😃", label: "Excellent",   sub: "Almost at my best",      color: "#085041" },
-  { score: 10, emoji: "🤩", label: "Amazing",     sub: "Feeling absolutely great",color: "#085041" },
+  { score: 0, emoji: "😩", label: "Terrible", sub: "Extremely distressed", color: "#E24B4A" },
+  { score: 1, emoji: "😞", label: "Very bad", sub: "Feeling very down", color: "#D85A30" },
+  { score: 2, emoji: "😟", label: "Bad", sub: "Not doing well", color: "#EF9F27" },
+  { score: 3, emoji: "😕", label: "Poor", sub: "Struggling a bit", color: "#BA7517" },
+  { score: 4, emoji: "😐", label: "Low", sub: "Below average day", color: "#888780" },
+  { score: 5, emoji: "🙂", label: "Okay", sub: "Neither good nor bad", color: "#5DCAA5" },
+  { score: 6, emoji: "😊", label: "Good", sub: "Feeling decent", color: "#1D9E75" },
+  { score: 7, emoji: "😄", label: "Pretty good", sub: "Having a good day", color: "#1D9E75" },
+  { score: 8, emoji: "😁", label: "Great", sub: "Feeling really well", color: "#0F6E56" },
+  { score: 9, emoji: "😃", label: "Excellent", sub: "Almost at my best", color: "#085041" },
+  { score: 10, emoji: "🤩", label: "Amazing", sub: "Feeling absolutely great", color: "#085041" },
 ];
 
 export default function MoodTracker({ onClose, onSubmit }) {
@@ -33,6 +34,8 @@ export default function MoodTracker({ onClose, onSubmit }) {
   const sliderRef = useRef(null);
 
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [direction, setDirection] = useState(0); // -1 prev, +1 next
+  const weekKey = currentDate.toISOString().slice(0, 10); // unique key per week
 
   const formatDate = (date) => {
     const d = new Date(date);
@@ -97,12 +100,14 @@ export default function MoodTracker({ onClose, onSubmit }) {
   const weekDays = getWeekDays(currentDate);
 
   const handlePrevWeek = () => {
+    setDirection(-1);
     const prev = new Date(currentDate);
     prev.setDate(currentDate.getDate() - 7);
     setCurrentDate(prev);
   };
 
   const handleNextWeek = () => {
+    setDirection(1);
     const next = new Date(currentDate);
     next.setDate(currentDate.getDate() + 7);
     setCurrentDate(next);
@@ -111,6 +116,7 @@ export default function MoodTracker({ onClose, onSubmit }) {
   const handleDayClick = (date) => {
     const clickedStr = formatDate(date);
     if (clickedStr > todayStr) return; // Prevent logging future dates
+    if (clickedStr < todayStr) return; // Prevent logging past dates
 
     setSelectedDate(date);
     const dayMoods = moods[clickedStr] || [];
@@ -137,7 +143,7 @@ export default function MoodTracker({ onClose, onSubmit }) {
     if (!selectedDate) return;
     const dateStr = formatDate(selectedDate);
     setFormError(null);
- 
+
     try {
       const newMood = await logMood(value, dateStr);
       setMoods(prev => {
@@ -163,7 +169,7 @@ export default function MoodTracker({ onClose, onSubmit }) {
     const dayMoods = moods[dateStr] || [];
     const moodToUpdate = dayMoods.slice().reverse().find(m => !m.isUpdated);
     if (!moodToUpdate) return;
-    
+
     setFormError(null);
     try {
       const moodId = moodToUpdate._id || moodToUpdate.id;
@@ -194,7 +200,7 @@ export default function MoodTracker({ onClose, onSubmit }) {
     const dayMoods = moods[dateStr] || [];
     const moodToDelete = dayMoods[dayMoods.length - 1];
     if (!moodToDelete) return;
-    
+
     setFormError(null);
     try {
       const moodId = moodToDelete._id || moodToDelete.id;
@@ -256,60 +262,141 @@ export default function MoodTracker({ onClose, onSubmit }) {
             </div>
 
             {/* Weekly Calendar */}
-            <div className="w-full md:w-[650px] min-h-20 bg-white/10 dark:bg-slate-800/50 backdrop-blur-sm mx-auto rounded-2xl p-4 flex items-center justify-between shadow-sm border border-white/10">
+            <div className="w-full md:w-[650px] min-h-20 bg-white/10 dark:bg-slate-800/50 backdrop-blur-sm mx-auto rounded-2xl p-4 flex items-center justify-between shadow-sm border border-white/10 overflow-hidden">
               {loading ? (
-                <p className="text-white w-full text-center py-4">Loading moods...</p>
+                <div className="flex w-full justify-between items-start px-1">
+                  {[...Array(7)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 14 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut", delay: i * 0.05 }}
+                      className="flex flex-col items-center gap-2"
+                    >
+                      {/* Day name pill */}
+                      <div
+                        className="h-3 w-7 md:w-8 rounded-full"
+                        style={{
+                          background: "linear-gradient(90deg, rgba(255,255,255,0.12) 25%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.12) 75%)",
+                          backgroundSize: "300px 100%",
+                          animation: `shimmer 1.5s infinite linear`,
+                          animationDelay: `${i * 0.08}s`,
+                        }}
+                      />
+                      {/* Circle */}
+                      <div className="relative">
+                        <div
+                          className="w-10 h-10 md:w-14 md:h-14 rounded-full"
+                          style={{
+                            background: "linear-gradient(90deg, rgba(255,255,255,0.10) 25%, rgba(255,255,255,0.25) 50%, rgba(255,255,255,0.10) 75%)",
+                            backgroundSize: "300px 100%",
+                            animation: `shimmer 1.5s infinite linear`,
+                            animationDelay: `${i * 0.08 + 0.1}s`,
+                          }}
+                        />
+                        {/* Badge */}
+                        <div
+                          className="absolute -bottom-1 -right-1 w-5 h-5 md:w-6 md:h-6 rounded-full"
+                          style={{
+                            background: "linear-gradient(90deg, rgba(255,255,255,0.15) 25%, rgba(255,255,255,0.30) 50%, rgba(255,255,255,0.15) 75%)",
+                            backgroundSize: "300px 100%",
+                            animation: `shimmer 1.5s infinite linear`,
+                            animationDelay: `${i * 0.08 + 0.2}s`,
+                          }}
+                        />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               ) : error && error !== 'history' ? (
                 <p className="text-red-300 w-full text-center py-4">{error}</p>
               ) : (
-                <div className="flex w-full justify-between items-start">
-                  {weekDays.map((date) => {
-                    const dateStr = formatDate(date);
-                    const isToday = dateStr === todayStr;
-                    const isFuture = dateStr > todayStr;
-                    const dayMoods = moods[dateStr] || [];
-                    const dayMoodData = dayMoods.length > 0 ? dayMoods[dayMoods.length - 1] : null;
-                    const dayMood = dayMoodData ? MOODS.find(m => m.score === dayMoodData.mood) : null;
-                    const dayName = date.toLocaleDateString("en-US", { weekday: 'short' });
+                <AnimatePresence mode="wait" initial={false} custom={direction}>
+                  <motion.div
+                    key={weekKey}
+                    custom={direction}
+                    variants={{
+                      enter: (d) => ({ x: d > 0 ? 80 : -80, opacity: 0 }),
+                      center: { x: 0, opacity: 1 },
+                      exit: (d) => ({ x: d > 0 ? -80 : 80, opacity: 0 }),
+                    }}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.28, ease: "easeInOut" }}
+                    className="flex w-full justify-between items-start"
+                  >
+                    {weekDays.map((date, index) => {
+                      const dateStr = formatDate(date);
+                      const isToday = dateStr === todayStr;
+                      const isFuture = dateStr > todayStr;
+                      const isPast = dateStr < todayStr;
+                      const isDisabled = isFuture || isPast;
+                      const dayMoods = moods[dateStr] || [];
+                      const dayMoodData = dayMoods.length > 0 ? dayMoods[dayMoods.length - 1] : null;
+                      const dayMood = dayMoodData ? MOODS.find(m => m.score === dayMoodData.mood) : null;
+                      const dayName = date.toLocaleDateString("en-US", { weekday: 'short' });
 
-                    return (
-                      <div
-                        key={dateStr}
-                        onClick={() => !isFuture && handleDayClick(date)}
-                        className={`flex flex-col items-center gap-2 ${isFuture ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:scale-110 transition-transform'}`}
-                        title={isFuture ? "Cannot log for future dates" : "Log mood"}
-                      >
-                        <span className={`text-xs md:text-sm font-medium ${isToday ? 'text-white font-bold' : 'text-white/80'}`}>
-                          {dayName}
-                        </span>
-                        <div className="relative">
-                          <div
-                            className={`w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all shadow-inner ${isToday ? 'ring-2 ring-white ring-offset-2 ring-offset-[#147E8F] dark:ring-offset-teal-950' : ''}`}
-                            style={{
-                              backgroundColor: dayMood ? dayMood.color : 'rgba(255, 255, 255, 0.15)',
-                              border: dayMood ? `2px solid ${dayMood.color}` : '2px solid transparent'
-                            }}
-                          >
-                            {dayMood ? (
-                              <span className="text-lg md:text-2xl drop-shadow-md">{dayMood.emoji}</span>
-                            ) : (
-                              <span className="text-white/50 text-xs md:text-base font-semibold">{date.getDate()}</span>
+                      return (
+                        <motion.div
+                          key={dateStr}
+                          variants={{
+                            enter: { opacity: 0, y: 18, scale: 0.88 },
+                            center: { opacity: 1, y: 0, scale: 1 },
+                            exit: { opacity: 0, y: -10, scale: 0.92 },
+                          }}
+                          transition={{
+                            duration: 0.32,
+                            ease: "easeOut",
+                            delay: index * 0.045,
+                          }}
+                          onClick={() => !isDisabled && handleDayClick(date)}
+                          className={`flex flex-col items-center gap-2 ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                          whileHover={!isDisabled ? { scale: 1.12, y: -2 } : {}}
+                          whileTap={!isDisabled ? { scale: 0.96 } : {}}
+                          title={
+                            isFuture ? "Cannot log for future dates" :
+                            isPast ? "Cannot edit past days" :
+                            "Log today's mood"
+                          }
+                        >
+                          <span className={`text-xs md:text-sm font-medium ${isToday ? 'text-white font-bold' : 'text-white/80'}`}>
+                            {dayName}
+                          </span>
+                          <div className="relative">
+                            <div
+                              className={`w-10 h-10 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all shadow-inner ${isToday ? 'ring-2 ring-white ring-offset-2 ring-offset-[#147E8F] dark:ring-offset-teal-950' : ''}`}
+                              style={{
+                                backgroundColor: dayMood ? dayMood.color : 'rgba(255, 255, 255, 0.15)',
+                                border: dayMood ? `2px solid ${dayMood.color}` : '2px solid transparent'
+                              }}
+                            >
+                              {dayMood ? (
+                                <span className="text-lg md:text-2xl drop-shadow-md">{dayMood.emoji}</span>
+                              ) : (
+                                <span className="text-white/50 text-xs md:text-base font-semibold">{date.getDate()}</span>
+                              )}
+                            </div>
+                            {!isFuture && (
+                              <motion.div
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ delay: index * 0.045 + 0.2, duration: 0.22, type: "spring", stiffness: 300 }}
+                                className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 p-0.5 flex items-center justify-center w-5 h-5 md:w-6 md:h-6 shadow-sm"
+                              >
+                                <img
+                                  src={dayMoods.length >= 2 ? done : dayMoods.length === 1 ? hdone : ndone}
+                                  alt={dayMoods.length >= 2 ? "Done" : dayMoods.length === 1 ? "Half done" : "Not done"}
+                                  className={dayMoods.length >= 2 ? "w-2.5 h-2" : dayMoods.length === 1 ? "w-2.5 h-2" : "w-2.5 h-2.5"}
+                                />
+                              </motion.div>
                             )}
                           </div>
-                          {!isFuture && (
-                            <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 p-0.5 flex items-center justify-center w-5 h-5 md:w-6 md:h-6 shadow-sm">
-                              <img 
-                                src={dayMoods.length >= 2 ? done : dayMoods.length === 1 ? hdone : ndone} 
-                                alt={dayMoods.length >= 2 ? "Done" : dayMoods.length === 1 ? "Half done" : "Not done"} 
-                                className={dayMoods.length >= 2 ? "w-2.5 h-2" : dayMoods.length === 1 ? "w-2.5 h-2" : "w-2.5 h-2.5"} 
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                        </motion.div>
+                      );
+                    })}
+                  </motion.div>
+                </AnimatePresence>
               )}
             </div>
 
@@ -357,7 +444,7 @@ export default function MoodTracker({ onClose, onSubmit }) {
                 {isFullyDone ? (
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                 ) : (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
                 )}
               </div>
               <div>

@@ -111,7 +111,7 @@ const SpeakChatBot = () => {
 
   useEffect(() => {
     aiService.getAllSessions().then(data => {
-      if(Array.isArray(data)) setChatHistory(data);
+      if (Array.isArray(data)) setChatHistory(data);
     }).catch(console.error);
   }, []);
 
@@ -172,7 +172,7 @@ const SpeakChatBot = () => {
       if (response.sessionId && response.sessionId !== sessionId) {
         setSessionId(response.sessionId);
         aiService.getAllSessions().then(data => {
-          if(Array.isArray(data)) setChatHistory(data);
+          if (Array.isArray(data)) setChatHistory(data);
         }).catch(console.error);
       }
 
@@ -304,59 +304,34 @@ const SpeakChatBot = () => {
               Profile
             </motion.button>
 
-            <motion.button
-              variants={itemVariants}
-              whileHover={{ scale: 1.03, x: 4 }}
-              whileTap={{ scale: 0.97 }}
-              className="will-change-transform pl-4 text-slate-700 dark:text-slate-200 flex content-center items-center gap-3 h-11 w-full border border-[#036464] dark:border-teal-700 rounded-2xl cursor-pointer bg-transparent hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-all duration-200"
-              onClick={() => navigate('/')}
-            >
-              <img src={victor5} alt="" />
-              Settings
-            </motion.button>
-
             <motion.div variants={itemVariants} className="flex flex-col gap-4 w-full mt-4">
               <p className="flex justify-between text-lg font-semibold text-slate-800 dark:text-slate-200 pb-1">Chat history <img src={arrow} alt="" /></p>
               {chatHistory.slice(0, 5).map(session => (
-                <motion.p 
-                  key={session.id} 
-                  whileHover={{ x: 5 }} 
-                  className="flex gap-1.5 cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-sm transition-colors whitespace-nowrap overflow-hidden text-ellipsis" 
+                <motion.p
+                  key={session.id}
+                  whileHover={{ x: 5 }}
+                  className="flex gap-1.5 cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 text-sm transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
                   onClick={async () => {
-                   try {
-                     const s = await aiService.getSession(session.id);
-                     setSessionId(session.id);
-                     setMessages(s.messages.map((m, i) => ({
-                       _id: `msg-${session.id}-${i}`,
-                       role: m.role === 'assistant' ? 'ai' : 'user',
-                       content: m.content,
-                       sent_at: s.updatedAt 
-                     })));
-                     if (window.innerWidth < 1024) setSidebarOpen(false);
-                   } catch (e) {
-                     console.error(e);
-                   }
-                }}>
+                    try {
+                      const s = await aiService.getSession(session.id);
+                      setSessionId(session.id);
+                      setMessages(s.messages.map((m, i) => ({
+                        _id: `msg-${session.id}-${i}`,
+                        role: m.role === 'assistant' ? 'ai' : 'user',
+                        content: m.content,
+                        sent_at: s.updatedAt
+                      })));
+                      if (window.innerWidth < 1024) setSidebarOpen(false);
+                    } catch (e) {
+                      console.error(e);
+                    }
+                  }}>
                   <img src={arrow} alt="" className="shrink-0" />
                   <span className="truncate">{session.preview || "New Session"}</span>
                 </motion.p>
               ))}
             </motion.div>
           </div>
-
-          <motion.div variants={itemVariants} className="w-full px-4 mt-auto mb-6 shrink-0">
-            <div className="bg-slate-100 dark:bg-slate-800 rounded-3xl p-4 flex flex-col gap-2 border border-slate-200 dark:border-slate-700">
-              <h2 className="font-semibold text-slate-800 dark:text-slate-200">Free plan</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Unlock advanced features for better care.</p>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="will-change-transform h-9 w-36 mx-auto mt-1 bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-center text-white rounded-lg cursor-pointer font-semibold text-sm transition-all hover:shadow-md hover:shadow-teal-500/30"
-              >
-                Upgrade
-              </motion.button>
-            </div>
-          </motion.div>
         </motion.nav>
 
         <motion.div
@@ -418,11 +393,6 @@ const SpeakChatBot = () => {
           <footer className="px-4 sm:px-6 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 shrink-0 z-10">
             <div className="max-w-4xl mx-auto relative">
               <div className={`flex items-end gap-2 bg-slate-100 dark:bg-slate-800 rounded-[24px] border border-transparent focus-within:border-teal-400 dark:focus-within:border-teal-500 px-4 py-2 sm:py-2.5 transition-all duration-200 shadow-sm ${loading ? 'opacity-70 pointer-events-none' : ''}`}>
-                <button className="p-2 -ml-2 text-slate-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors rounded-full shrink-0">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
-                  </svg>
-                </button>
                 <textarea
                   ref={textareaRef}
                   value={input}
