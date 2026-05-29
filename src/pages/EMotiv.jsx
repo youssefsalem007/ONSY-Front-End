@@ -82,10 +82,11 @@ const Counter = ({ target, suffix = '' }) => {
   const started = useRef(false)
 
   useEffect(() => {
-    const observer = new IntersectionObserver(([entry]) => {
+    const observer = new IntersectionObserver(async ([entry]) => {
       if (entry.isIntersecting && !started.current) {
         started.current = true
         let start = 0
+        const res = await axiosInstance.get('/eeg/latest')
         const step = Math.ceil(target / 60)
         const timer = setInterval(() => {
           start += step
@@ -200,10 +201,10 @@ export default function EMotiv() {
             Scroll down for Early Access
           </span>
           <div className="w-6 h-10 rounded-full border-2 border-teal-200 dark:border-teal-700/60 flex items-start justify-center pt-2 bg-white/30 dark:bg-slate-800/30 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               animate={{ y: [0, 12, 0] }}
               transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-              className="w-1.5 h-3 rounded-full bg-gradient-to-b from-teal-500 to-cyan-400" 
+              className="w-1.5 h-3 rounded-full bg-gradient-to-b from-teal-500 to-cyan-400"
             />
           </div>
         </motion.div>
@@ -391,7 +392,7 @@ export default function EMotiv() {
               className="relative inline-flex flex-col items-center gap-5 mt-4"
             >
               {/* Animated arrows pointing down */}
-              <motion.div 
+              <motion.div
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
                 className="flex flex-col items-center text-teal-100 dark:text-cyan-200 drop-shadow-md"
@@ -405,7 +406,7 @@ export default function EMotiv() {
               <div className="relative">
                 {/* Glowing pulse ring behind button */}
                 <div className="absolute -inset-1.5 rounded-[1.3rem] bg-gradient-to-r from-teal-200 to-white dark:from-cyan-300 dark:to-teal-300 opacity-60 blur-lg animate-pulse" />
-                
+
                 <motion.button
                   whileHover={{ y: -3, scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}

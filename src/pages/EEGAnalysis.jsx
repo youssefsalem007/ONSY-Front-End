@@ -7,13 +7,13 @@ import axiosInstance from '../utils/axiosInstance'
 
 // ── Metric config ─────────────────────────────────────────────────────────────
 const METRIC_CONFIG = [
-  { key: 'focus',      label: 'Attention',   color: '#3b82f6', bar: 'bg-blue-500',    icon: '🎯' },
-  { key: 'focus',      label: 'Focus',       color: '#10b981', bar: 'bg-emerald-500', icon: '🔍' },
-  { key: 'interest',   label: 'Interest',    color: '#818cf8', bar: 'bg-indigo-400',  icon: '✨' },
-  { key: 'stress',     label: 'Stress',      color: '#ef4444', bar: 'bg-red-500',     icon: '⚡' },
-  { key: 'relaxation', label: 'Relaxation',  color: '#14b8a6', bar: 'bg-teal-500',    icon: '🌊' },
-  { key: 'excitement', label: 'Excitement',  color: '#f97316', bar: 'bg-orange-500',  icon: '🚀' },
-  { key: 'engagement', label: 'Engagement',  color: '#ec4899', bar: 'bg-pink-500',    icon: '💡' },
+  { key: 'focus', label: 'Attention', color: '#3b82f6', bar: 'bg-blue-500', icon: '🎯' },
+  { key: 'focus', label: 'Focus', color: '#10b981', bar: 'bg-emerald-500', icon: '🔍' },
+  { key: 'interest', label: 'Interest', color: '#818cf8', bar: 'bg-indigo-400', icon: '✨' },
+  { key: 'stress', label: 'Stress', color: '#ef4444', bar: 'bg-red-500', icon: '⚡' },
+  { key: 'relaxation', label: 'Relaxation', color: '#14b8a6', bar: 'bg-teal-500', icon: '🌊' },
+  { key: 'excitement', label: 'Excitement', color: '#f97316', bar: 'bg-orange-500', icon: '🚀' },
+  { key: 'engagement', label: 'Engagement', color: '#ec4899', bar: 'bg-pink-500', icon: '💡' },
 ]
 
 // ── Animated number ───────────────────────────────────────────────────────────
@@ -75,9 +75,9 @@ export default function EEGAnalysis() {
 
   // ── Fetch latest on mount
   useEffect(() => {
-    axiosInstance.get('/analysis/latest')
+    axiosInstance.get('/eeg/latest')
       .then(res => { if (res.data?.data) setLatestAnalysis(res.data.data) })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setPageLoading(false))
   }, [])
 
@@ -91,21 +91,21 @@ export default function EEGAnalysis() {
   }, [analysisTimestamp])
 
   // ── Derived data
-  const result    = latestAnalysis?.result || null
-  const eegMetrics = result?.eegMetrics  || null
-  const metrics   = eegMetrics || {}
+  const result = latestAnalysis?.result || null
+  const eegMetrics = result?.eegMetrics || null
+  const metrics = eegMetrics || {}
 
   const eegData = METRIC_CONFIG.map(m => ({
     ...m,
     value: Math.round((metrics[m.key] || 0) * 100),
   }))
 
-  const eyeBlinks  = eegMetrics ? Math.max(10, Math.round((metrics.focus || 0.5) * 450)) : null
-  const eyeDir     = eegMetrics ? (metrics.focus > 0.5 ? 'Center' : 'Wandering') : null
-  const upperFace  = eegMetrics
+  const eyeBlinks = eegMetrics ? Math.max(10, Math.round((metrics.focus || 0.5) * 450)) : null
+  const eyeDir = eegMetrics ? (metrics.focus > 0.5 ? 'Center' : 'Wandering') : null
+  const upperFace = eegMetrics
     ? (metrics.excitement > 0.4 ? 'Brow Raise' : metrics.stress > 0.5 ? 'Frown' : 'Neutral')
     : null
-  const lowerFace  = eegMetrics ? (metrics.engagement > 0.6 ? 'Smile' : 'Neutral') : null
+  const lowerFace = eegMetrics ? (metrics.engagement > 0.6 ? 'Smile' : 'Neutral') : null
 
   // ── File handling
   const handleFileChange = e => {
@@ -182,9 +182,8 @@ export default function EEGAnalysis() {
           className="w-full rounded-3xl bg-white dark:bg-slate-800/60 border-2 border-dashed border-teal-200 dark:border-teal-700/50 shadow-xl backdrop-blur-md overflow-hidden"
         >
           <div
-            className={`p-8 md:p-12 flex flex-col items-center gap-6 transition-all duration-300 ${
-              dragOver ? 'bg-teal-50/80 dark:bg-teal-900/20' : ''
-            }`}
+            className={`p-8 md:p-12 flex flex-col items-center gap-6 transition-all duration-300 ${dragOver ? 'bg-teal-50/80 dark:bg-teal-900/20' : ''
+              }`}
             onDragOver={e => { e.preventDefault(); setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
@@ -232,11 +231,10 @@ export default function EEGAnalysis() {
                 whileTap={!analysing && file ? { scale: 0.97 } : {}}
                 onClick={handleUpload}
                 disabled={analysing || !file}
-                className={`flex-1 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-lg ${
-                  analysing || !file
-                    ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed shadow-none'
-                    : 'bg-gradient-to-r from-teal-600 to-cyan-500 hover:shadow-teal-300/50 dark:hover:shadow-teal-500/30'
-                }`}
+                className={`flex-1 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 flex items-center justify-center gap-2 shadow-lg ${analysing || !file
+                  ? 'bg-slate-300 dark:bg-slate-700 cursor-not-allowed shadow-none'
+                  : 'bg-gradient-to-r from-teal-600 to-cyan-500 hover:shadow-teal-300/50 dark:hover:shadow-teal-500/30'
+                  }`}
               >
                 {analysing ? (
                   <>
@@ -348,10 +346,10 @@ export default function EEGAnalysis() {
                 [0, 1, 2, 3].map(i => <SkeletonFaceCard key={i} delay={i * 0.07} />)
               ) : (
                 [
-                  { label: 'Eye Blinks',    value: eyeBlinks !== null ? `${eyeBlinks} times` : '—', color: 'text-blue-500',   icon: '👁' },
-                  { label: 'Eye Direction', value: eyeDir    || '—',                                color: 'text-slate-700 dark:text-slate-200', icon: '👀' },
-                  { label: 'Upper Face',    value: upperFace || '—',                                color: 'text-indigo-500', icon: '🤨' },
-                  { label: 'Lower Face',    value: lowerFace || '—',                                color: 'text-slate-700 dark:text-slate-200', icon: '😐' },
+                  { label: 'Eye Blinks', value: eyeBlinks !== null ? `${eyeBlinks} times` : '—', color: 'text-blue-500', icon: '👁' },
+                  { label: 'Eye Direction', value: eyeDir || '—', color: 'text-slate-700 dark:text-slate-200', icon: '👀' },
+                  { label: 'Upper Face', value: upperFace || '—', color: 'text-indigo-500', icon: '🤨' },
+                  { label: 'Lower Face', value: lowerFace || '—', color: 'text-slate-700 dark:text-slate-200', icon: '😐' },
                 ].map((item, idx) => (
                   <motion.div
                     key={idx}

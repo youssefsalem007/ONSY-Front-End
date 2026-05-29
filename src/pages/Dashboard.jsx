@@ -146,7 +146,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const [latestRes, historyRes] = await Promise.all([
-          axiosInstance.get('/analysis/latest'),
+          axiosInstance.get('/eeg/latest'),
           axiosInstance.get('/analysis/history')
         ]);
         
