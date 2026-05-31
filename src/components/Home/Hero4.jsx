@@ -188,7 +188,7 @@ const Hero4 = () => {
                 </span>
               </div>
             </div>
-            <div className="flex-1 min-h-[240px] lg:min-h-[300px] w-full">
+            <div className="w-full h-[240px] lg:h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data} margin={{ top: 10, right: 20, left: -40, bottom: 0 }}>
                   <defs>
