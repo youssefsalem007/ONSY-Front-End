@@ -10,6 +10,7 @@ import { HeroUIProvider } from "@heroui/system";
 import Verification from './pages/Verification'
 import ProtectedRoute from './routes/ProtectedRoute'
 import PublicRoute from './routes/PublicRoute'
+import PaymentProtectedRoute from './routes/PaymentProtectedRoute'
 import SingOut from './pages/SingOut'
 import ForgetP from './pages/ForgetP'
 import ForgetPOTP from './pages/ForgetPOTP'
@@ -51,7 +52,7 @@ function App() {
             <Route path='/Speak' element={<ProtectedRoute> <SpeakChatBot /> </ProtectedRoute>} />
             <Route path='/EMotiv' element={<ProtectedRoute> <EMotiv /> </ProtectedRoute>} />
             <Route path='/checkout' element={<ProtectedRoute> <CheckoutPage /> </ProtectedRoute>} />
-            <Route path='/EEGAnalysis' element={<ProtectedRoute> <EEGAnalysis /> </ProtectedRoute>} />
+            <Route path='/EEGAnalysis' element={<ProtectedRoute> <PaymentProtectedRoute> <EEGAnalysis /> </PaymentProtectedRoute> </ProtectedRoute>} />
             <Route path='/Mood' element={<ProtectedRoute> <MoodT /> </ProtectedRoute>} />
             <Route path='/Profile' element={<ProtectedRoute> <Profile /> </ProtectedRoute>} />
             {/* <Route path='/Speak' element={<ProtectedRoute> <AiChat /> </ProtectedRoute>  } /> */}

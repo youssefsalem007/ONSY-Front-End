@@ -26,7 +26,7 @@ export const SocketProvider = ({ children }) => {
       // Vercel doesn't support persistent WebSockets, fallback to HTTP Polling
       const pollInterval = setInterval(async () => {
         try {
-          const res = await axiosInstance.get('/eeg/latest');
+          const res = await axiosInstance.get('/analysis/latest');
           const latest = res.data?.data;
           
           if (latest && latest._id !== lastAnalysisId.current) {

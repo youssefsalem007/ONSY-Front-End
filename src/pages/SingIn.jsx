@@ -6,8 +6,7 @@ import { toast } from 'react-toastify';
 import { Link, useNavigate } from "react-router-dom";
 import { loginSchema } from '../schemas/login.schema';
 import { loginUser } from '../services/authService';
-import google from "../assets/Group.png"
-import aro from "../assets/Vector.png"
+
 import Loading from './Loading';
 
 const SingIn = () => {
@@ -226,23 +225,7 @@ const SingIn = () => {
               {isSubmitting ? "Loading..." : "Log in"}
             </Button>
 
-            {/* Divider */}
-            <div className="flex items-center justify-center gap-4">
-              <div className="h-px bg-slate-200 dark:bg-slate-600 flex-1"></div>
-              <p className="text-slate-400 dark:text-slate-500 font-medium text-sm">Or sign up with</p>
-              <div className="h-px bg-slate-200 dark:bg-slate-600 flex-1"></div>
-            </div>
 
-            {/* Google Button */}
-            <div className="w-full bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 p-3 rounded-xl flex justify-between items-center cursor-pointer group hover:border-teal-300 dark:hover:border-teal-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 ease-out">
-              <div className="flex items-center gap-3">
-                <img src={google} alt="Google logo" className="w-5 h-5 object-contain" />
-                <p className="font-bold text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-slate-100 transition-colors">
-                  Sign up with Google
-                </p>
-              </div>
-              <img src={aro} className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" alt="Arrow right" />
-            </div>
           </div>
 
           {/* Signup Link */}

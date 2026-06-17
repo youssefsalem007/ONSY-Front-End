@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   LineChart,
   Line,
@@ -7,7 +7,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ReferenceDot,
   ResponsiveContainer,
 } from 'recharts'
 import axiosInstance from '../utils/axiosInstance'
@@ -18,23 +17,23 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.3,
-    },
+    transition: { staggerChildren: 0.2 },
   },
 }
 
 const itemVariants = {
   hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { duration: 0.8, ease: "easeOut" } 
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: 'easeOut' },
   },
 }
 
-// ── SVG Circular Gauge — scales via CSS wrapper ───────────────────────────────
-const CircularGauge = ({ value = 0, label = "" }) => {
+// ── SVG Circular Gauge — key prop forces remount on every new value ────────────
+// The `gaugeKey` prop must change whenever the value changes so Framer Motion
+// re-runs the initial→animate transition (arc fill + number fade-in).
+const CircularGauge = ({ value = 0, label = '', gaugeKey }) => {
   const size = 230
   const cx = size / 2
   const cy = size / 2
@@ -44,19 +43,28 @@ const CircularGauge = ({ value = 0, label = "" }) => {
   const filled = (value / 100) * circumference
   const gap = circumference - filled
 
+  // Colour the arc based on wellness score
+  const gradId = `gaugeGrad-${gaugeKey ?? value}`
+  const glowId = `arcGlow-${gaugeKey ?? value}`
+  const innerGradId = `innerGrad-${gaugeKey ?? value}`
+
+  const startColor = value >= 70 ? '#5dd6e4' : value >= 40 ? '#f0a500' : '#ef4444'
+  const midColor   = value >= 70 ? '#1b8799' : value >= 40 ? '#c47d00' : '#b91c1c'
+  const endColor   = value >= 70 ? '#0b3645' : value >= 40 ? '#7c4f00' : '#7f1d1d'
+
   return (
-    <svg width="100%" height="100%" viewBox={`0 0 ${size} ${size}`}>
+    <svg key={gaugeKey} width="100%" height="100%" viewBox={`0 0 ${size} ${size}`}>
       <defs>
-        <linearGradient id="gaugeGrad" x1="1" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="#5dd6e4" />
-          <stop offset="55%"  stopColor="#1b8799" />
-          <stop offset="100%" stopColor="#0b3645" />
+        <linearGradient id={gradId} x1="1" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor={startColor} />
+          <stop offset="55%"  stopColor={midColor} />
+          <stop offset="100%" stopColor={endColor} />
         </linearGradient>
-        <radialGradient id="innerGrad" cx="40%" cy="35%" r="60%">
+        <radialGradient id={innerGradId} cx="40%" cy="35%" r="60%">
           <stop offset="0%"   stopColor="#e8f5f7" stopOpacity="0.6" />
           <stop offset="100%" stopColor="#c2dde1" stopOpacity="0.3" />
         </radialGradient>
-        <filter id="arcGlow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id={glowId} x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
           <feMerge>
             <feMergeNode in="blur" />
@@ -73,41 +81,41 @@ const CircularGauge = ({ value = 0, label = "" }) => {
       <circle cx={cx} cy={cy} r={radius}
         fill="none" stroke="rgba(97,132,117,0.22)" strokeWidth={strokeWidth} />
 
-      {/* Filled progress arc */}
+      {/* Filled progress arc — animates from 0 every time gaugeKey changes */}
       <motion.circle cx={cx} cy={cy} r={radius}
         fill="none"
-        stroke="url(#gaugeGrad)"
+        stroke={`url(#${gradId})`}
         strokeWidth={strokeWidth}
         strokeLinecap="butt"
         transform={`rotate(-90, ${cx}, ${cy})`}
-        filter="url(#arcGlow)"
+        filter={`url(#${glowId})`}
         initial={{ strokeDasharray: `0 ${circumference}` }}
         animate={{ strokeDasharray: `${filled} ${gap}` }}
-        transition={{ duration: 2, ease: "easeOut", delay: 0.5 }}
+        transition={{ duration: 1.6, ease: 'easeOut', delay: 0.1 }}
       />
 
       {/* Inner circle depth */}
       <circle cx={cx} cy={cy} r={radius - strokeWidth / 2 - 2}
-        fill="url(#innerGrad)" />
+        fill={`url(#${innerGradId})`} />
       <circle cx={cx} cy={cy} r={radius - strokeWidth / 2 - 2}
         fill="none" stroke="rgba(97,132,117,0.2)" strokeWidth={1} />
 
-      {/* Center text */}
+      {/* Center text — fades in after arc fills */}
       <motion.text x={cx} y={cy} textAnchor="middle"
         fill="#2d7d8a" fontSize={32} fontWeight={800}
         fontFamily="inherit" letterSpacing="-1"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 2 }}
+        transition={{ duration: 0.5, delay: 1.2 }}
       >
         {value}%
       </motion.text>
       <motion.text x={cx} y={cy + 24} textAnchor="middle"
         fill="#147E8F" fontSize={14} fontWeight={600}
         fontFamily="inherit"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 2 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 1.4 }}
       >
         {label}
       </motion.text>
@@ -115,7 +123,40 @@ const CircularGauge = ({ value = 0, label = "" }) => {
   )
 }
 
-// AI returns: 1=Normal (best), 2=Mild, 3=Moderate, 4=High Risk (worst)
+// ── EEG Metric bar ─────────────────────────────────────────────────────────────
+const MetricBar = ({ label, value, color, icon }) => {
+  const pct = Math.round((value || 0) * 100)
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between text-xs font-semibold">
+        <span className="flex items-center gap-1 text-slate-600 dark:text-slate-400">
+          <span>{icon}</span>{label}
+        </span>
+        <motion.span
+          key={pct}
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          style={{ color }}
+        >
+          {pct}%
+        </motion.span>
+      </div>
+      <div className="h-2 bg-slate-100 dark:bg-slate-700/60 rounded-full overflow-hidden">
+        <motion.div
+          key={pct}
+          initial={{ width: 0 }}
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 1, ease: 'easeOut' }}
+          className="h-full rounded-full"
+          style={{ background: color }}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── Mood level labels ─────────────────────────────────────────────────────────
 const moodLabels = { 1: 'Normal', 2: 'Mild', 3: 'Moderate', 4: 'High Risk' }
 
 const MoodTooltip = ({ active, payload, label }) => {
@@ -132,200 +173,184 @@ const MoodTooltip = ({ active, payload, label }) => {
   )
 }
 
+// ── EEG metric config ─────────────────────────────────────────────────────────
+const EEG_METRICS = [
+  { key: 'focus',      label: 'Focus',      icon: '🎯', color: '#3b82f6' },
+  { key: 'engagement', label: 'Engagement', icon: '💡', color: '#ec4899' },
+  { key: 'excitement', label: 'Excitement', icon: '🚀', color: '#f97316' },
+  { key: 'relaxation', label: 'Relaxation', icon: '🌊', color: '#14b8a6' },
+  { key: 'stress',     label: 'Stress',     icon: '⚡', color: '#ef4444' },
+  { key: 'interest',   label: 'Interest',   icon: '✨', color: '#818cf8' },
+]
+
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 const Dashboard = () => {
-  const { analysisState, analysisTimestamp } = useSocket();
-  const [latestAnalysis, setLatestAnalysis] = useState(null);
-  const [historyData, setHistoryData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  // Track the timestamp we last processed so we don't re-run on mount
-  const lastProcessedTimestamp = useRef(null);
+  const { analysisState, analysisTimestamp } = useSocket()
+  const [latestAnalysis, setLatestAnalysis] = useState(null)
+  const [historyData, setHistoryData]       = useState([])
+  const [loading, setLoading]               = useState(true)
+  const [lastUpdated, setLastUpdated]       = useState(null)
+  const lastProcessedTimestamp              = useRef(null)
 
-  // Fetch initial data
+  // ── Fetch initial data ─────────────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [latestRes, historyRes] = await Promise.all([
-          axiosInstance.get('/eeg/latest'),
-          axiosInstance.get('/analysis/history')
-        ]);
-        
-        if (latestRes.data?.data) setLatestAnalysis(latestRes.data.data);
-        
-        if (historyRes.data?.data) {
-          // Map to chart format
-          const formattedHistory = historyRes.data.data.reverse().map((item, index) => ({
-            index: index + 1,
-            mood: item.result?.mental_level || 2, // 1-4 level
-          }));
-          setHistoryData(formattedHistory);
+        // Fetch latest AIAnalysis (has result.dominant_emotion, recommendations, eegMetrics…)
+        const latestRes = await axiosInstance.get('/analysis/latest').catch(err => {
+          // 404 means user has no analyses yet — treat as empty, not a crash
+          if (err?.response?.status === 404) return null
+          throw err
+        })
+        if (latestRes?.data?.data) setLatestAnalysis(latestRes.data.data)
+
+        // Fetch history for the line chart
+        const historyRes = await axiosInstance.get('/analysis/history').catch(err => {
+          if (err?.response?.status === 404) return null
+          throw err
+        })
+        if (historyRes?.data?.data) {
+          const formatted = historyRes.data.data
+            .slice()
+            .reverse()
+            .map((item, index) => ({
+              index: index + 1,
+              mood: item.result?.mental_level || 2,
+            }))
+          setHistoryData(formatted)
         }
       } catch (err) {
-        console.error("Failed to load dashboard data", err);
+        console.error('Failed to load dashboard data', err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchData();
-  }, []);
+    }
+    fetchData()
+  }, [])
 
-  // Listen to socket updates — only react to genuinely NEW analyses
+  // ── Live socket / poll updates ─────────────────────────────────────────────
   useEffect(() => {
-    if (!analysisState || !analysisTimestamp) return;
-    // Skip if we already processed this exact update
-    if (lastProcessedTimestamp.current === analysisTimestamp) return;
-    lastProcessedTimestamp.current = analysisTimestamp;
+    if (!analysisState || !analysisTimestamp) return
+    if (lastProcessedTimestamp.current === analysisTimestamp) return
+    lastProcessedTimestamp.current = analysisTimestamp
 
-    setLatestAnalysis(analysisState);
+    setLatestAnalysis(analysisState)
+    setLastUpdated(new Date())
     setHistoryData(prev => {
-      const newData = [...prev, {
-        index: prev.length ? prev[prev.length - 1].index + 1 : 1,
-        mood: analysisState.result?.mental_level || 2
-      }];
-      if (newData.length > 20) return newData.slice(newData.length - 20);
-      return newData;
-    });
-  }, [analysisTimestamp]);
+      const next = [
+        ...prev,
+        {
+          index: prev.length ? prev[prev.length - 1].index + 1 : 1,
+          mood: analysisState.result?.mental_level || 2,
+        },
+      ]
+      return next.length > 20 ? next.slice(next.length - 20) : next
+    })
+  }, [analysisTimestamp])
 
+  // ── Loading skeleton ───────────────────────────────────────────────────────
   if (loading) {
     return (
       <section className="min-h-screen bg-[#FEFDFE] dark:bg-slate-900 transition-colors duration-300 py-24 px-5 sm:px-10 lg:px-16 xl:px-24 flex flex-col gap-10">
         <div className="flex flex-col lg:flex-row lg:justify-between gap-10">
-
-          {/* ── Left Column Skeleton ── */}
           <div className="flex flex-col gap-6 w-full lg:w-[48%]">
-
-            {/* Line Chart Card Skeleton */}
-            <div className="
-              w-full h-64 sm:h-80 lg:h-[400px]
-              bg-[#147E8F1A] dark:bg-teal-900/20
-              rounded-3xl
-              shadow-[0_0_40px_0_rgba(0,0,0,0.08)] dark:shadow-[0_0_40px_0_rgba(0,0,0,0.3)]
-              border border-teal-200/30 dark:border-teal-700/30
-              flex flex-col items-start justify-start
-              px-6 py-5 gap-4 overflow-hidden
-            ">
-              {/* Chart title */}
+            <div className="w-full h-64 sm:h-80 lg:h-[400px] bg-[#147E8F1A] dark:bg-teal-900/20 rounded-3xl border border-teal-200/30 dark:border-teal-700/30 flex flex-col items-start justify-start px-6 py-5 gap-4 overflow-hidden shadow-lg">
               <div className="skeleton-shimmer h-4 w-48 rounded-full" />
-              {/* Fake chart bars */}
               <div className="flex-1 w-full flex items-end gap-2 pb-2">
-                {[45, 65, 40, 75, 55, 80, 50, 70, 60, 85, 45, 65, 72, 50, 90, 60, 78, 55, 68, 40].map((h, i) => (
-                  <div
-                    key={i}
-                    className="skeleton-shimmer flex-1 rounded-t-md"
-                    style={{ height: `${h}%` }}
-                  />
+                {[45,65,40,75,55,80,50,70,60,85,45,65,72,50,90,60,78,55,68,40].map((h, i) => (
+                  <div key={i} className="skeleton-shimmer flex-1 rounded-t-md" style={{ height: `${h}%` }} />
                 ))}
               </div>
-              {/* X-axis line */}
               <div className="skeleton-shimmer h-[2px] w-full rounded-full opacity-50" />
             </div>
-
-            {/* AI Recommendations Skeleton */}
             <div className="w-full flex flex-col gap-4">
               <div className="skeleton-shimmer h-7 w-52 rounded-full" />
-              <div className="flex flex-col gap-3 pl-2">
-                {[85, 70, 90, 60].map((w, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="skeleton-shimmer w-2 h-2 rounded-full shrink-0" />
-                    <div className={`skeleton-shimmer h-3.5 rounded-full`} style={{ width: `${w}%` }} />
-                  </div>
-                ))}
-              </div>
+              {[85,70,90,60].map((w, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="skeleton-shimmer w-2 h-2 rounded-full shrink-0" />
+                  <div className="skeleton-shimmer h-3.5 rounded-full" style={{ width: `${w}%` }} />
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* ── Right Column Skeleton ── */}
           <div className="flex flex-col gap-6 w-full lg:w-[48%]">
-
-            {/* Gauge Card Skeleton */}
-            <div className="
-              w-full h-64 sm:h-80 lg:h-[400px]
-              bg-[#61847520] dark:bg-slate-800/40
-              rounded-3xl
-              shadow-[0_0_40px_0_rgba(0,0,0,0.08)] dark:shadow-[0_0_40px_0_rgba(0,0,0,0.3)]
-              border border-teal-200/20 dark:border-slate-700/50
-              flex flex-col items-center justify-center gap-5
-            ">
-              {/* Label above gauge */}
+            <div className="w-full h-64 sm:h-80 lg:h-[400px] bg-[#61847520] dark:bg-slate-800/40 rounded-3xl border border-teal-200/20 dark:border-slate-700/50 flex flex-col items-center justify-center gap-5 shadow-lg">
               <div className="skeleton-shimmer h-4 w-40 rounded-full" />
-              {/* Circular gauge */}
-              <div className="relative w-40 h-40 sm:w-48 sm:h-48 lg:w-[230px] lg:h-[230px]">
-                <svg width="100%" height="100%" viewBox="0 0 230 230" className="opacity-30">
-                  <circle cx="115" cy="115" r="80" fill="none" stroke="rgba(20,126,143,0.25)" strokeWidth="30" />
-                </svg>
-                <svg width="100%" height="100%" viewBox="0 0 230 230" className="absolute inset-0">
-                  <circle cx="115" cy="115" r="80"
-                    fill="none" strokeWidth="30" strokeLinecap="butt"
-                    transform="rotate(-90, 115, 115)"
-                    className="skeleton-shimmer"
-                    style={{ stroke: 'url(#skeletonGrad)' }}
-                  />
-                  <defs>
-                    <linearGradient id="skeletonGrad" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="rgba(20,126,143,0.15)" />
-                      <stop offset="50%" stopColor="rgba(20,126,143,0.35)" />
-                      <stop offset="100%" stopColor="rgba(20,126,143,0.15)" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                {/* Center placeholder */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                  <div className="skeleton-shimmer h-8 w-16 rounded-full" />
-                  <div className="skeleton-shimmer h-3 w-20 rounded-full" />
-                </div>
-              </div>
+              <div className="skeleton-shimmer w-40 h-40 sm:w-48 sm:h-48 lg:w-[230px] lg:h-[230px] rounded-full" />
             </div>
-
-            {/* Current Mental State Skeleton */}
-            <div className="w-full flex flex-col gap-4">
+            <div className="w-full flex flex-col gap-3">
               <div className="skeleton-shimmer h-7 w-56 rounded-full" />
-              <div className="flex flex-col gap-4 pl-2">
-                {[
-                  { label: 55, value: 38 },
-                  { label: 42, value: 62 },
-                  { label: 30, value: 45 },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="skeleton-shimmer w-2 h-2 rounded-full shrink-0" />
-                    <div className="flex gap-2 flex-wrap">
-                      <div className="skeleton-shimmer h-3.5 rounded-full" style={{ width: `${item.label * 0.8}px` }} />
-                      <div className="skeleton-shimmer h-3.5 rounded-full" style={{ width: `${item.value * 1}px` }} />
-                    </div>
+              {EEG_METRICS.map((_, i) => (
+                <div key={i} className="flex flex-col gap-1">
+                  <div className="flex justify-between">
+                    <div className="skeleton-shimmer h-3 w-24 rounded-full" />
+                    <div className="skeleton-shimmer h-3 w-8 rounded-full" />
                   </div>
-                ))}
-                {/* Emotion chips row */}
-                <div className="flex flex-wrap gap-2 mt-1 pl-4">
-                  {[60, 72, 50, 68, 80].map((w, i) => (
-                    <div key={i} className="skeleton-shimmer h-6 rounded-md" style={{ width: `${w}px` }} />
-                  ))}
+                  <div className="skeleton-shimmer h-2 w-full rounded-full" />
                 </div>
-              </div>
+              ))}
             </div>
           </div>
-
         </div>
       </section>
-    );
+    )
   }
 
-  const result = latestAnalysis?.result || {};
-  const currentMoodScore = result.risk_score !== undefined 
-    ? Math.max(0, Math.min(100, Math.round(100 - result.risk_score)))
-    : Math.max(0, Math.min(100, Math.round(100 - ((result.mental_level || 2) - 1) * 25)));
+  // ── Derive display values ──────────────────────────────────────────────────
+  const result     = latestAnalysis?.result || {}
+  const eegMetrics = result.eegMetrics || {}
+
+  // Mental wellness score: 0-100 (higher = better)
+  const currentMoodScore =
+    result.risk_score !== undefined
+      ? Math.max(0, Math.min(100, Math.round(100 - result.risk_score)))
+      : Math.max(0, Math.min(100, Math.round(100 - ((result.mental_level || 2) - 1) * 25)))
+
+  // Gauge key — changes whenever score OR timestamp changes, forcing re-animation
+  const gaugeKey = `${currentMoodScore}-${analysisTimestamp ?? 'init'}`
 
   return (
-    <motion.section 
+    <motion.section
       variants={containerVariants}
       initial="hidden"
       animate="visible"
       className="min-h-screen bg-[#FEFDFE] dark:bg-slate-900 transition-colors duration-300 py-24 px-5 sm:px-10 lg:px-16 xl:px-24 flex flex-col gap-10"
     >
+      {/* ── Live indicator ── */}
+      <motion.div
+        variants={itemVariants}
+        className="flex items-center justify-between flex-wrap gap-3"
+      >
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-teal-500" />
+          </span>
+          <span className="text-xs font-bold text-teal-600 dark:text-teal-400 uppercase tracking-widest">
+            Live Dashboard
+          </span>
+        </div>
+        <AnimatePresence mode="wait">
+          {lastUpdated && (
+            <motion.span
+              key={lastUpdated.getTime()}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-xs text-slate-400 dark:text-slate-500 font-medium"
+            >
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
       <div className="flex flex-col lg:flex-row lg:justify-between gap-10">
+
         {/* ── Left Column ── */}
         <div className="flex flex-col gap-6 w-full lg:w-[48%]">
 
-          {/* Line Chart Card */}
+          {/* Line Chart */}
           <motion.div variants={itemVariants} className="
             w-full h-64 sm:h-80 lg:h-[400px]
             bg-[#147E8F3D] dark:bg-teal-900/30
@@ -335,12 +360,13 @@ const Dashboard = () => {
             flex flex-col items-center justify-center
             px-2 py-4
           ">
-            <h3 className="text-[#2d5c5c] dark:text-teal-300 font-semibold mb-2">Recent Mental Levels (Last 20)</h3>
+            <h3 className="text-[#2d5c5c] dark:text-teal-300 font-semibold mb-2">
+              Mental Level History (Last 20)
+            </h3>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={historyData} margin={{ top: 20, right: 16, left: 4, bottom: 24 }}>
                 <CartesianGrid vertical horizontal={false}
                   stroke="rgba(255,255,255,0.6)" strokeWidth={1} />
-
                 <XAxis
                   dataKey="index"
                   tickLine={false}
@@ -351,11 +377,10 @@ const Dashboard = () => {
                     style: { fill: '#147E8F', fontSize: 12, fontWeight: 700 },
                   }}
                 />
-
                 <YAxis
                   domain={[1, 4]} ticks={[1, 2, 3, 4]}
                   reversed={true}
-                  tickLine={false} axisLine={false} width={70}
+                  tickLine={false} axisLine={false} width={72}
                   tickFormatter={(v) => moodLabels[v] ?? ''}
                   tick={{ fill: '#3a7c89', fontSize: 10, fontWeight: 500 }}
                   label={{
@@ -363,19 +388,17 @@ const Dashboard = () => {
                     style: { fill: '#147E8F', fontSize: 12, fontWeight: 700 },
                   }}
                 />
-
                 <Tooltip content={<MoodTooltip />}
                   cursor={{ stroke: 'rgba(20,126,143,0.3)', strokeWidth: 1 }} />
-
-                <Line 
-                  type="monotone" 
+                <Line
+                  type="monotone"
                   dataKey="mood"
-                  stroke="#0e6b78" 
-                  strokeWidth={2.5} 
+                  stroke="#0e6b78"
+                  strokeWidth={2.5}
                   dot={{ r: 3, fill: '#0e6b78' }}
                   activeDot={{ r: 5, fill: '#0e6b78', stroke: 'white', strokeWidth: 2 }}
                   isAnimationActive={true}
-                  animationDuration={1500}
+                  animationDuration={800}
                   animationEasing="ease-out"
                 />
               </LineChart>
@@ -387,22 +410,45 @@ const Dashboard = () => {
             <h2 className="font-bold text-xl sm:text-2xl text-[#111111] dark:text-slate-100">
               AI Recommendations
             </h2>
-            {result.recommendations && result.recommendations.length > 0 ? (
-              <ul className="flex flex-col gap-3 font-medium list-disc pl-5 text-[#5F5F5F] dark:text-slate-400">
-                {result.recommendations.map((rec, idx) => (
-                  <li key={idx}><span className="text-[#147E8F] dark:text-teal-400">{rec}</span></li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-[#5F5F5F] dark:text-slate-400">No recommendations available at this time. Start by logging a mood or uploading EEG data.</p>
-            )}
+            <AnimatePresence mode="wait">
+              {result.recommendations && result.recommendations.length > 0 ? (
+                <motion.ul
+                  key={analysisTimestamp ?? 'recs'}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex flex-col gap-3 font-medium list-disc pl-5 text-[#5F5F5F] dark:text-slate-400"
+                >
+                  {result.recommendations.map((rec, idx) => (
+                    <motion.li
+                      key={idx}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.07 }}
+                    >
+                      <span className="text-[#147E8F] dark:text-teal-400">{rec}</span>
+                    </motion.li>
+                  ))}
+                </motion.ul>
+              ) : (
+                <motion.p
+                  key="no-recs"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-[#5F5F5F] dark:text-slate-400"
+                >
+                  No recommendations yet. Upload EEG data or log a mood to get started.
+                </motion.p>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
 
         {/* ── Right Column ── */}
         <div className="flex flex-col gap-6 w-full lg:w-[48%]">
 
-          {/* Gauge Card */}
+          {/* Gauge Card — key forces full remount & re-animation on each update */}
           <motion.div variants={itemVariants} className="
             w-full h-64 sm:h-80 lg:h-[400px]
             bg-[#61847547] dark:bg-slate-800/50
@@ -415,36 +461,109 @@ const Dashboard = () => {
               Mental Wellness Score
             </p>
             <div className="w-40 h-40 sm:w-48 sm:h-48 lg:w-[230px] lg:h-[230px]">
-              <CircularGauge value={currentMoodScore} label={result.dominant_emotion || "Unknown"} />
+              <CircularGauge
+                key={gaugeKey}
+                gaugeKey={gaugeKey}
+                value={currentMoodScore}
+                label={result.dominant_emotion || 'Unknown'}
+              />
             </div>
           </motion.div>
 
-          {/* Overall Mood Text */}
+          {/* EEG Metrics — real-time bars */}
+          <motion.div variants={itemVariants} className="w-full flex flex-col gap-4">
+            <h2 className="font-bold text-xl sm:text-2xl text-[#111111] dark:text-slate-100">
+              EEG Brain Metrics
+            </h2>
+            <AnimatePresence mode="wait">
+              {Object.keys(eegMetrics).length > 0 ? (
+                <motion.div
+                  key={analysisTimestamp ?? 'eeg'}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col gap-3"
+                >
+                  {EEG_METRICS.map((m) => (
+                    <MetricBar
+                      key={m.key}
+                      label={m.label}
+                      icon={m.icon}
+                      color={m.color}
+                      value={eegMetrics[m.key] ?? 0}
+                    />
+                  ))}
+                </motion.div>
+              ) : (
+                <motion.p
+                  key="no-eeg"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-[#5F5F5F] dark:text-slate-400 text-sm"
+                >
+                  No EEG data yet. Upload a CSV on the E-Motiv page.
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Current Mental State */}
           <motion.div variants={itemVariants} className="w-full flex flex-col gap-4">
             <h2 className="font-bold text-xl sm:text-2xl text-[#111111] dark:text-slate-100">
               Current Mental State
             </h2>
-            <ul className="flex flex-col gap-4 font-semibold list-disc pl-5 text-[#5F5F5F] dark:text-slate-400">
-              <li>
-                Dominant Emotion: <span className="text-[#147E8F] dark:text-teal-400 capitalize">{result.dominant_emotion || "N/A"}</span>
-              </li>
-              <li>
-                Sentiment: <span className="text-[#147E8F] dark:text-teal-400 capitalize">{result.sentiment || "N/A"}</span> 
-                <span className="text-sm ml-2 opacity-70">(Score: {result.sentiment_score !== undefined ? result.sentiment_score.toFixed(2) : "N/A"})</span>
-              </li>
-              {result.emotions && (
-                <li className="mt-2">
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {Object.entries(result.emotions).map(([emo, val]) => (
-                      <span key={emo} className="bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300 px-2 py-1 rounded text-xs">
-                        {emo}: {(val * 100).toFixed(1)}%
-                      </span>
-                    ))}
-                  </div>
+            <AnimatePresence mode="wait">
+              <motion.ul
+                key={analysisTimestamp ?? 'state'}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col gap-4 font-semibold list-disc pl-5 text-[#5F5F5F] dark:text-slate-400"
+              >
+                <li>
+                  Dominant Emotion:{' '}
+                  <span className="text-[#147E8F] dark:text-teal-400 capitalize">
+                    {result.dominant_emotion || 'N/A'}
+                  </span>
                 </li>
-              )}
-            </ul>
+                <li>
+                  Sentiment:{' '}
+                  <span className="text-[#147E8F] dark:text-teal-400 capitalize">
+                    {result.sentiment || 'N/A'}
+                  </span>
+                  {result.sentiment_score !== undefined && (
+                    <span className="text-sm ml-2 opacity-70">
+                      (Score: {result.sentiment_score.toFixed(2)})
+                    </span>
+                  )}
+                </li>
+                <li>
+                  Mental Level:{' '}
+                  <span className="text-[#147E8F] dark:text-teal-400">
+                    {moodLabels[result.mental_level] || 'N/A'}
+                  </span>
+                </li>
+                {result.emotions && (
+                  <li className="mt-1">
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {Object.entries(result.emotions).map(([emo, val]) => (
+                        <motion.span
+                          key={emo}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          className="bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300 px-2 py-1 rounded text-xs"
+                        >
+                          {emo}: {(val * 100).toFixed(1)}%
+                        </motion.span>
+                      ))}
+                    </div>
+                  </li>
+                )}
+              </motion.ul>
+            </AnimatePresence>
           </motion.div>
+
         </div>
       </div>
     </motion.section>

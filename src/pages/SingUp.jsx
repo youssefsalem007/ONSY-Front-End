@@ -6,16 +6,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema } from "../schemas/signup.schema";
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from "react-router-dom";
-import google from "../assets/Group.png"
-import aro from "../assets/Vector.png"
-import { registerUser, googleSignup } from '../services/authService';
+import { registerUser } from '../services/authService';
 
 const SignUp = () => {
   const [isError, setError] = useState(false);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const googleBtnRef = useRef(null);
+
 
   const { register, handleSubmit, setError: setFormError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
@@ -179,18 +177,7 @@ const SignUp = () => {
                 <Input {...register("dateOfBirth")} type="date" className={inputCls} />
                 {errors.dateOfBirth && <p className={errorCls}>{errors.dateOfBirth.message}</p>}
               </div>
-              <div className="flex items-center gap-4">
-                <div className="h-px bg-slate-200 dark:bg-slate-600 flex-1" />
-                <p className="text-slate-400 dark:text-slate-500 text-xs font-medium whitespace-nowrap">Or sign up with</p>
-                <div className="h-px bg-slate-200 dark:bg-slate-600 flex-1" />
-              </div>
-              <div className="w-full bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 p-3 rounded-xl flex justify-between items-center cursor-pointer group hover:border-teal-300 dark:hover:border-teal-500 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
-                <div className="flex items-center gap-3">
-                  <img src={google} alt="google" className="w-5 h-5 object-contain" />
-                  <p className="font-semibold text-slate-600 dark:text-slate-300 group-hover:text-slate-800 dark:group-hover:text-slate-100 transition-colors text-sm sm:text-base">Sign up with Google</p>
-                </div>
-                <img src={aro} className="w-4 h-4 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" alt="arrow" />
-              </div>
+
               <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting} className={`w-full h-11 rounded-xl bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white font-bold text-sm shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5 transition-all duration-300 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}>
                 {isSubmitting ? "Creating Account..." : "Continue"}
               </Button>

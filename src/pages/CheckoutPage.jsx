@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -15,6 +15,27 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ name: '', cardNumber: '', expiry: '', cvv: '' });
 
+  // If the user has already completed payment, skip directly to EEG Analysis
+  useEffect(() => {
+    const checkPayment = () => {
+      try {
+        const tokenString = localStorage.getItem('payment_token');
+        if (!tokenString) return false;
+        const tokenData = JSON.parse(tokenString);
+        if (tokenData && tokenData.expiry && Date.now() < tokenData.expiry) {
+          return true;
+        }
+        return false;
+      } catch (err) {
+        return false;
+      }
+    };
+
+    if (checkPayment()) {
+      navigate('/EEGAnalysis', { replace: true });
+    }
+  }, [navigate]);
+
   const handleInputChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -25,12 +46,41 @@ export default function CheckoutPage() {
       toast.error('Please fill in all payment details.');
       return;
     }
+
+    const [month, year] = form.expiry.split('/');
+    if (!month || !year || month < 1 || month > 12) {
+      toast.error('Invalid expiry format. Use MM/YY.');
+      return;
+    }
+
+    const currentDate = new Date();
+    const currentYear = parseInt(currentDate.getFullYear().toString().slice(-2), 10);
+    const currentMonth = currentDate.getMonth() + 1; // 1-12
+
+    const expYear = parseInt(year, 10);
+    const expMonth = parseInt(month, 10);
+
+    if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
+      toast.error('Expiry date cannot be in the past.');
+      return;
+    }
     
     setLoading(true);
     // Simulate processing
     setTimeout(() => {
       setLoading(false);
-      toast.success('Payment successful! Welcome to E-Motiv.');
+      
+      // Calculate expiration based on selected plan
+      const now = Date.now();
+      let days = 30; // default to 1 month (tier1)
+      if (selectedPlan === 'tier2') days = 90; // 3 months
+      else if (selectedPlan === 'tier3') days = 365; // 1 year
+      
+      const expiry = now + (days * 24 * 60 * 60 * 1000);
+      
+      // Persist payment token so this page is skipped on future visits
+      localStorage.setItem('payment_token', JSON.stringify({ expiry, plan: selectedPlan }));
+      toast.success('Payment successful!');
       navigate('/EEGAnalysis');
     }, 1500);
   };

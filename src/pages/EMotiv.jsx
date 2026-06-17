@@ -103,7 +103,13 @@ const Counter = ({ target, suffix = '' }) => {
 
 export default function EMotiv() {
   const [hoveredFeature, setHoveredFeature] = useState(null)
+  const [hasPaid, setHasPaid] = useState(false)
   const navigate = useNavigate()
+
+  // Check once on mount whether the user already completed payment
+  useEffect(() => {
+    setHasPaid(localStorage.getItem('emotiv_paid') === 'true')
+  }, [])
 
   return (
     <motion.div
@@ -409,10 +415,10 @@ export default function EMotiv() {
                 <motion.button
                   whileHover={{ y: -3, scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => navigate('/checkout')}
+                  onClick={() => navigate(hasPaid ? '/EEGAnalysis' : '/checkout')}
                   className="relative group px-12 py-4 rounded-2xl bg-white text-teal-800 font-black shadow-2xl transition-all duration-300 text-xl hover:shadow-[0_0_40px_rgba(255,255,255,0.5)] ring-4 ring-white/40 dark:ring-white/20"
                 >
-                  Get Early Access
+                  {hasPaid ? 'Go to EEG Analysis' : 'Get Early Access'}
                   <span className="ml-2 inline-block transition-transform duration-300 group-hover:translate-x-2">→</span>
                 </motion.button>
               </div>

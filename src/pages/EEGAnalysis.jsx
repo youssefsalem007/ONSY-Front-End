@@ -72,12 +72,9 @@ export default function EEGAnalysis() {
   const fileInputRef = useRef(null)
   const lastTs = useRef(null)
 
-  // ── Fetch latest on mount
+  // ── Initial setup
   useEffect(() => {
-    eegService.getLatestAnalysis()
-      .then(data => { if (data?.data) setLatestAnalysis(data.data) })
-      .catch(() => { })
-      .finally(() => setPageLoading(false))
+    setPageLoading(false)
   }, [])
 
   // ── Socket live updates
@@ -96,7 +93,7 @@ export default function EEGAnalysis() {
 
   const eegData = METRIC_CONFIG.map(m => ({
     ...m,
-    value: Math.round((metrics[m.key] || 0) * 100),
+    value: eegMetrics ? Math.round((metrics[m.key] || 0) * 100) : null,
   }))
 
   const eyeBlinks = eegMetrics ? Math.max(10, Math.round((metrics.focus || 0.5) * 450)) : null
@@ -280,8 +277,8 @@ export default function EEGAnalysis() {
 
           {/* Performance Metrics */}
           <div className="flex flex-col gap-5">
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700/60" />
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700/60" />
               <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest whitespace-nowrap">
                 Performance Metrics
               </h2>
@@ -305,12 +302,12 @@ export default function EEGAnalysis() {
                       {metric.label}
                     </span>
                     <span className="text-3xl font-light" style={{ color: metric.color }}>
-                      <AnimatedNumber value={metric.value} />%
+                      {metric.value !== null ? <><AnimatedNumber value={metric.value} />%</> : 'N/A'}
                     </span>
                     <div className="absolute bottom-3 left-4 right-4 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
-                        animate={{ width: `${metric.value}%` }}
+                        animate={{ width: `${metric.value || 0}%` }}
                         transition={{ duration: 1.2, delay: idx * 0.1, ease: 'easeOut' }}
                         className={`h-full ${metric.bar}`}
                         style={{ borderRadius: '999px' }}
@@ -324,8 +321,8 @@ export default function EEGAnalysis() {
 
           {/* Facial & Eye Tracking */}
           <div className="flex flex-col gap-5">
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700/60" />
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-slate-200 dark:bg-slate-700/60" />
               <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest whitespace-nowrap">
                 Facial &amp; Eye Tracking
               </h2>
@@ -337,10 +334,10 @@ export default function EEGAnalysis() {
                 [0, 1, 2, 3].map(i => <SkeletonFaceCard key={i} delay={i * 0.07} />)
               ) : (
                 [
-                  { label: 'Eye Blinks', value: eyeBlinks !== null ? `${eyeBlinks} times` : '—', color: 'text-blue-500', icon: '👁' },
-                  { label: 'Eye Direction', value: eyeDir || '—', color: 'text-slate-700 dark:text-slate-200', icon: '👀' },
-                  { label: 'Upper Face', value: upperFace || '—', color: 'text-indigo-500', icon: '🤨' },
-                  { label: 'Lower Face', value: lowerFace || '—', color: 'text-slate-700 dark:text-slate-200', icon: '😐' },
+                  { label: 'Eye Blinks', value: eyeBlinks !== null ? `${eyeBlinks} times` : 'N/A', color: 'text-blue-500', icon: '👁' },
+                  { label: 'Eye Direction', value: eyeDir || 'N/A', color: 'text-slate-700 dark:text-slate-200', icon: '👀' },
+                  { label: 'Upper Face', value: upperFace || 'N/A', color: 'text-indigo-500', icon: '🤨' },
+                  { label: 'Lower Face', value: lowerFace || 'N/A', color: 'text-slate-700 dark:text-slate-200', icon: '😐' },
                 ].map((item, idx) => (
                   <motion.div
                     key={idx}
