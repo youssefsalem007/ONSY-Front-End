@@ -1,19 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Button, Label } from "@heroui/react";
-import { Input } from '@heroui/react';
+import React, { useState } from 'react'
+import { Button, Label, Input } from "@heroui/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from '@hookform/resolvers/zod'
 import { registerSchema } from "../schemas/signup.schema";
 import { toast } from 'react-toastify';
 import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from '../services/authService';
+import { motion } from 'framer-motion';
+import { Brain, Network, HeartPulse, AlertCircle } from 'lucide-react';
 
 const SignUp = () => {
   const [isError, setError] = useState(false);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
 
   const { register, handleSubmit, setError: setFormError, formState: { errors, isSubmitting } } = useForm({
     resolver: zodResolver(registerSchema),
@@ -112,84 +112,173 @@ const SignUp = () => {
     }
   }
 
-  const inputCls = "w-full h-11 px-4 text-sm font-semibold rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 focus:bg-white dark:focus:bg-slate-700 focus:border-teal-500 dark:focus:border-teal-400 outline-none transition-all duration-300 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500";
-  const labelCls = "block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1";
-  const errorCls = "text-red-500 dark:text-red-400 text-xs mt-0.5 font-medium";
+  const inputCls = "w-full px-4 py-2.5 h-11 text-sm rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-4 focus:ring-teal-500/10 dark:focus:ring-teal-400/10 outline-none transition-all duration-300 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500";
+  const labelCls = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-1.5";
+  const errorCls = "text-red-500 dark:text-red-400 text-xs mt-1.5 font-medium flex items-center gap-1 animate-pulse";
 
   return (
-    <section className="h-screen w-full bg-gradient-to-br from-slate-50 via-white to-teal-50/60 dark:from-slate-950 dark:via-slate-900 dark:to-teal-950/20 transition-colors duration-300 flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 pt-24 pb-6">
-        <div className="w-full max-w-xl mx-auto">
-          <form
-            onSubmit={handleSubmit(onSubmitForm)}
-            className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-3xl px-6 py-7 sm:px-8 sm:py-8 shadow-[0_8px_40px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] border border-slate-100 dark:border-slate-700/60 flex flex-col gap-4 transition-all duration-300"
+    <div className="min-h-screen w-full flex bg-white dark:bg-slate-900 font-sans">
+      
+      {/* Left Side - Visuals (Right aligned for SignUp to alternate layout, but kept standard split here) */}
+      <div className="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-slate-950 order-2">
+        {/* Background Gradients & Effects */}
+        <div className="absolute inset-0 bg-gradient-to-tl from-teal-900/50 via-slate-900 to-slate-950" />
+        <div className="absolute w-[700px] h-[700px] bg-emerald-500/10 rounded-full blur-[150px] top-10 left-10 animate-pulse duration-[6000ms]" />
+        <div className="absolute w-[400px] h-[400px] bg-teal-600/20 rounded-full blur-[100px] -bottom-20 -right-20 animate-pulse duration-[8000ms]" />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center max-w-xl mx-auto">
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="bg-white/5 p-6 rounded-3xl backdrop-blur-md mb-8 border border-white/10 shadow-2xl"
           >
-            <div className="text-teal-600 dark:text-teal-400 font-labrada text-3xl sm:text-4xl text-center font-bold tracking-tight">ONSY</div>
-            <div className="text-center">
-              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">Create an account</h1>
-              <p className="text-slate-500 dark:text-slate-400 font-medium text-sm sm:text-base mt-0.5">Let's personalize your experience</p>
+            <Network className="w-20 h-20 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]" />
+          </motion.div>
+          
+          <motion.h2 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-4xl lg:text-5xl font-extrabold mb-6 tracking-tight text-white"
+          >
+            Join the Revolution
+          </motion.h2>
+          
+          <motion.p 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-slate-300 text-lg leading-relaxed mb-10"
+          >
+            Create an account to track your emotions, interact with our AI, and explore deep neurological insights.
+          </motion.p>
+          
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="flex flex-wrap gap-4 items-center justify-center"
+          >
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-200 bg-emerald-900/30 px-5 py-2.5 rounded-full border border-emerald-800/50 backdrop-blur-sm">
+              <HeartPulse className="w-4 h-4" /> Emotion Tracking
             </div>
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex flex-col flex-1">
-                  <Label htmlFor="firstName" className={labelCls}>First name</Label>
-                  <Input {...register("firstName")} type="text" className={inputCls} placeholder="Sara" />
-                  {errors.firstName && <p className={errorCls}>{errors.firstName.message}</p>}
-                </div>
-                <div className="flex flex-col flex-1">
-                  <Label htmlFor="lastName" className={labelCls}>Last name</Label>
-                  <Input {...register("lastName")} type="text" className={inputCls} placeholder="Ahmed" />
-                  {errors.lastName && <p className={errorCls}>{errors.lastName.message}</p>}
-                </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Right Side - Form (Left aligned here due to order-2 on the visual side) */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-10 lg:p-16 relative overflow-y-auto order-1">
+        
+        {/* Subtle background for mobile */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-white dark:from-slate-900 dark:to-slate-950 lg:hidden -z-10" />
+
+        <motion.div 
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-[500px] flex flex-col relative z-10"
+        >
+          {/* Mobile Header Brand */}
+          <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
+            <div className="bg-emerald-100 dark:bg-emerald-900/40 p-2.5 rounded-2xl">
+              <Brain className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <span className="text-emerald-600 dark:text-emerald-400 font-labrada font-bold text-4xl tracking-tight">ONSY</span>
+          </div>
+
+          <div className="mb-8 text-center lg:text-left">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">
+              Create an account
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 text-base">
+              Let's personalize your experience.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-5">
+            {/* Name Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <Label htmlFor="firstName" className={labelCls}>First name</Label>
+                <Input {...register("firstName")} type="text" className={inputCls} placeholder="Sara" />
+                {errors.firstName && <p className={errorCls}><AlertCircle className="w-3.5 h-3.5" /> {errors.firstName.message}</p>}
               </div>
               <div>
-                <Label htmlFor="email" className={labelCls}>Email address</Label>
-                <Input {...register("email")} type="email" className={inputCls} placeholder="your@email.com" />
-                {errors.email && <p className={errorCls}>{errors.email.message}</p>}
+                <Label htmlFor="lastName" className={labelCls}>Last name</Label>
+                <Input {...register("lastName")} type="text" className={inputCls} placeholder="Ahmed" />
+                {errors.lastName && <p className={errorCls}><AlertCircle className="w-3.5 h-3.5" /> {errors.lastName.message}</p>}
+              </div>
+            </div>
+
+            {/* Email Field */}
+            <div>
+              <Label htmlFor="email" className={labelCls}>Email address</Label>
+              <Input {...register("email")} type="email" className={inputCls} placeholder="your@email.com" />
+              {errors.email && <p className={errorCls}><AlertCircle className="w-3.5 h-3.5" /> {errors.email.message}</p>}
+            </div>
+
+            {/* Date & Gender */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <Label htmlFor="dateOfBirth" className={labelCls}>Date of Birth</Label>
+                <Input {...register("dateOfBirth")} type="date" className={inputCls} />
+                {errors.dateOfBirth && <p className={errorCls}><AlertCircle className="w-3.5 h-3.5" /> {errors.dateOfBirth.message}</p>}
               </div>
               <div>
                 <Label htmlFor="gender" className={labelCls}>Gender</Label>
-                <select {...register("gender")} className={`${inputCls} cursor-pointer`}>
-                  <option value="" disabled>Select Gender</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                </select>
-                {errors.gender && <p className={errorCls}>{errors.gender.message}</p>}
+                <div className="relative">
+                  <select {...register("gender")} className={`${inputCls} appearance-none cursor-pointer pr-10`}>
+                    <option value="" disabled hidden>Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
+                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                  </div>
+                </div>
+                {errors.gender && <p className={errorCls}><AlertCircle className="w-3.5 h-3.5" /> {errors.gender.message}</p>}
               </div>
+            </div>
+
+            {/* Password Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <Label htmlFor="password" className={labelCls}>Password</Label>
                 <div className="relative">
-                  <Input {...register("password")} type={showPassword ? "text" : "password"} className={inputCls} placeholder="Min 8 characters" />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-300 focus:outline-none">{showPassword ? "Hide" : "Show"}</button>
+                  <Input {...register("password")} type={showPassword ? "text" : "password"} className={`${inputCls} pr-14`} placeholder="Min 8 chars" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors focus:outline-none">{showPassword ? "Hide" : "Show"}</button>
                 </div>
-                {errors.password && <p className={errorCls}>{errors.password.message}</p>}
+                {errors.password && <p className={errorCls}><AlertCircle className="w-3.5 h-3.5" /> {errors.password.message}</p>}
               </div>
               <div>
                 <Label htmlFor="confirmPassword" className={labelCls}>Confirm Password</Label>
                 <div className="relative">
-                  <Input {...register("confirmPassword")} type={showConfirmPassword ? "text" : "password"} className={inputCls} placeholder="Min 8 characters" />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-300 focus:outline-none">{showConfirmPassword ? "Hide" : "Show"}</button>
+                  <Input {...register("confirmPassword")} type={showConfirmPassword ? "text" : "password"} className={`${inputCls} pr-14`} placeholder="Confirm pass" />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-400 dark:text-slate-500 hover:text-teal-600 dark:hover:text-teal-400 transition-colors focus:outline-none">{showConfirmPassword ? "Hide" : "Show"}</button>
                 </div>
-                {errors.confirmPassword && <p className={errorCls}>{errors.confirmPassword.message}</p>}
+                {errors.confirmPassword && <p className={errorCls}><AlertCircle className="w-3.5 h-3.5" /> {errors.confirmPassword.message}</p>}
               </div>
-              <div>
-                <Label htmlFor="dateOfBirth" className={labelCls}>Date of Birth</Label>
-                <Input {...register("dateOfBirth")} type="date" className={inputCls} />
-                {errors.dateOfBirth && <p className={errorCls}>{errors.dateOfBirth.message}</p>}
-              </div>
-
-              <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting} className={`w-full h-11 rounded-xl bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white font-bold text-sm shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5 transition-all duration-300 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}>
-                {isSubmitting ? "Creating Account..." : "Continue"}
-              </Button>
             </div>
-            <p className="text-slate-500 dark:text-slate-400 text-center font-medium">
-              Already have an account?{' '}
-              <Link to={'/SignIn'} className="text-teal-600 dark:text-teal-400 font-bold hover:text-teal-800 dark:hover:text-teal-300 hover:underline underline-offset-4 transition-all duration-300">Sign in</Link>
-            </p>
+
+            {/* Submit Button */}
+            <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting} className={`w-full h-12 mt-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-500 hover:from-teal-700 hover:to-emerald-600 text-white font-bold text-base shadow-[0_8px_20px_rgba(16,185,129,0.25)] hover:shadow-[0_10px_25px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center ${isSubmitting ? 'opacity-70 cursor-not-allowed transform-none hover:shadow-none' : ''}`}>
+              {isSubmitting ? "Creating Account..." : "Create Account"}
+            </Button>
+
+            <div className="mt-10 text-center">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                Already have an account?{' '}
+                <Link to={'/SignIn'} className="font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-300 hover:underline underline-offset-4 transition-all">
+                  Sign in
+                </Link>
+              </p>
+            </div>
           </form>
-        </div>
+        </motion.div>
       </div>
-    </section>
+    </div>
   )
 }
 

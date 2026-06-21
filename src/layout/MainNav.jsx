@@ -69,10 +69,10 @@ const MainNav = () => {
           <NavLink to="/Speak" className={getNavClass}>
             Speak with&nbsp;<span className="text-teal-600 dark:text-teal-400 font-semibold">ONSY</span>
           </NavLink>
-          <NavLink to="/Dashboard" className={getNavClass}>Dashboard</NavLink>
+          {isAuthenticated && <NavLink to="/Dashboard" className={getNavClass}>Dashboard</NavLink>}
           <NavLink to="/EMotiv" className={getNavClass}>E&#8209;Motiv</NavLink>
           <NavLink to="/Mood" className={getNavClass}>Mood</NavLink>
-          <NavLink to="/Profile" className={getNavClass}>Profile</NavLink>
+          {isAuthenticated && <NavLink to="/Profile" className={getNavClass}>Profile</NavLink>}
         </nav>
 
         {/* 3. Right side: Theme toggle + Auth button + hamburger */}
@@ -141,10 +141,10 @@ const MainNav = () => {
 
           <NavLink to="/" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Home</NavLink>
           <NavLink to="/Speak" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Speak with ONSY</NavLink>
-          <NavLink to="/Dashboard" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Dashboard</NavLink>
+          {isAuthenticated && <NavLink to="/Dashboard" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Dashboard</NavLink>}
           <NavLink to="/EMotiv" onClick={() => setIsOpen(false)} className={getMobileNavClass}>E-Motiv</NavLink>
           <NavLink to="/Mood" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Mood</NavLink>
-          <NavLink to="/Profile" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Profile</NavLink>
+          {isAuthenticated && <NavLink to="/Profile" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Profile</NavLink>}
 
           {/* Divider */}
           <div className="my-1 h-px bg-slate-100 dark:bg-slate-700 rounded-full" />

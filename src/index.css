@@ -84,12 +84,8 @@
     cursor: not-allowed;
   }
 
-  /* Smooth dark mode transitions */
-  *, *::before, *::after {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 200ms;
-    transition-timing-function: ease;
-  }
+  /* Smooth dark mode transitions removed due to massive performance lag on theme toggle */
+  /* Use Tailwind's `transition-colors duration-200` utility on specific components instead */
 
   /* Prevent transition on initial load */
   .no-transition * {

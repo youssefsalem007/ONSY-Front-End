@@ -6,6 +6,8 @@ import { toast } from 'react-toastify';
 import { Link, useNavigate } from "react-router-dom";
 import { loginSchema } from '../schemas/login.schema';
 import { loginUser } from '../services/authService';
+import { motion } from 'framer-motion';
+import { Brain, Activity, Sparkles, AlertCircle } from 'lucide-react';
 
 import Loading from './Loading';
 
@@ -126,68 +128,134 @@ const SingIn = () => {
     );
   }
 
-  return (
-    <>
-      <section className="h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-teal-50/60 dark:from-slate-950 dark:via-slate-900 dark:to-teal-950/20 px-4 pt-20 pb-4 sm:px-6 lg:px-8 transition-colors duration-300 overflow-hidden">
+  const inputCls = "w-full px-4 py-3 h-12 text-base rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-4 focus:ring-teal-500/10 dark:focus:ring-teal-400/10 outline-none transition-all duration-300 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500";
+  const labelCls = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2";
 
-        <form
-          onSubmit={handleSubmit(onSubmitForm)}
-          className="w-full max-w-lg bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-[0_8px_40px_rgb(0,0,0,0.06)] dark:shadow-[0_8px_40px_rgb(0,0,0,0.3)] border border-slate-100 dark:border-slate-700/60 flex flex-col gap-4 transition-all duration-300 hover:shadow-[0_8px_50px_rgb(0,0,0,0.09)] dark:hover:shadow-[0_8px_50px_rgb(0,0,0,0.4)]"
+  return (
+    <div className="min-h-screen w-full flex bg-white dark:bg-slate-900 font-sans">
+      
+      {/* Left Side - Visuals */}
+      <div className="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-slate-950">
+        {/* Background Gradients & Effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-900/40 via-slate-900 to-slate-950" />
+        <div className="absolute w-[600px] h-[600px] bg-teal-500/20 rounded-full blur-[120px] -top-32 -left-32 animate-pulse duration-[5000ms]" />
+        <div className="absolute w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] bottom-10 right-10 animate-pulse duration-[7000ms]" />
+        
+        {/* Content */}
+        <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center max-w-xl mx-auto">
+          <motion.div 
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="bg-white/5 p-6 rounded-3xl backdrop-blur-md mb-8 border border-white/10 shadow-2xl"
+          >
+            <Brain className="w-20 h-20 text-teal-400 drop-shadow-[0_0_15px_rgba(45,212,191,0.5)]" />
+          </motion.div>
+          
+          <motion.h2 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-4xl lg:text-5xl font-extrabold mb-6 tracking-tight text-white"
+          >
+            Unlock Deep Insights
+          </motion.h2>
+          
+          <motion.p 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-slate-300 text-lg leading-relaxed mb-10"
+          >
+            Advanced EEG Analysis and AI-driven mood tracking to elevate your cognitive and emotional well-being.
+          </motion.p>
+          
+          <motion.div 
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="flex flex-wrap gap-4 items-center justify-center"
+          >
+            <div className="flex items-center gap-2 text-sm font-medium text-teal-200 bg-teal-900/30 px-5 py-2.5 rounded-full border border-teal-800/50 backdrop-blur-sm">
+              <Activity className="w-4 h-4" /> Real-time Tracking
+            </div>
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-200 bg-emerald-900/30 px-5 py-2.5 rounded-full border border-emerald-800/50 backdrop-blur-sm">
+              <Sparkles className="w-4 h-4" /> AI Insights
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-20 relative overflow-y-auto">
+        
+        {/* Subtle background for mobile */}
+        <div className="absolute inset-0 bg-gradient-to-br from-teal-50/50 to-white dark:from-slate-900 dark:to-slate-950 lg:hidden -z-10" />
+
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="w-full max-w-md flex flex-col relative z-10"
         >
-          {/* Brand Header */}
-          <div className="text-teal-600 dark:text-teal-400 font-labrada font-bold text-3xl sm:text-4xl text-center tracking-tight">
-            ONSY
+          {/* Mobile Header Brand */}
+          <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
+            <div className="bg-teal-100 dark:bg-teal-900/40 p-2.5 rounded-2xl">
+              <Brain className="w-8 h-8 text-teal-600 dark:text-teal-400" />
+            </div>
+            <span className="text-teal-600 dark:text-teal-400 font-labrada font-bold text-4xl tracking-tight">ONSY</span>
           </div>
 
-          {/* Welcome Text */}
-          <div className="text-center">
-            <h1 className="text-2xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight mb-1">
+          <div className="mb-10 text-center lg:text-left">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white mb-3 tracking-tight">
               Welcome back
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium text-sm sm:text-base">
-              Continue your mental wellness journey
+            <p className="text-slate-500 dark:text-slate-400 text-base sm:text-lg">
+              Enter your details to access your account.
             </p>
           </div>
 
           {/* General Error Banner */}
           {isError && errorMessage && (
-            <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl px-4 py-3 animate-[fadeIn_0.3s_ease-out]">
-              <svg className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              <p className="text-red-600 dark:text-red-400 text-sm font-medium">{errorMessage}</p>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }} 
+              animate={{ opacity: 1, height: 'auto' }} 
+              className="mb-6 flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl px-4 py-3"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
+              <p className="text-red-600 dark:text-red-400 text-sm font-semibold">{errorMessage}</p>
+            </motion.div>
           )}
 
-          <div className="flex flex-col gap-3">
+          <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-5">
             {/* Email Field */}
-            <div className="w-full">
-              <Label htmlFor="email" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+            <div>
+              <Label htmlFor="email" className={labelCls}>
                 Email address
               </Label>
               <Input
                 {...register("email")}
                 type="email"
-                className="w-full px-4 py-3 h-auto text-base rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 focus:bg-white dark:focus:bg-slate-700 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-4 focus:ring-teal-500/10 dark:focus:ring-teal-400/10 outline-none transition-all duration-300 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                className={inputCls}
                 placeholder="your@email.com"
               />
               {errors.email && (
-                <p className="text-red-500 dark:text-red-400 text-sm mt-1.5 font-medium animate-pulse">
-                  {errors.email.message}
+                <p className="text-red-500 dark:text-red-400 text-sm mt-1.5 font-medium flex items-center gap-1.5 animate-pulse">
+                  <AlertCircle className="w-4 h-4" /> {errors.email.message}
                 </p>
               )}
             </div>
 
             {/* Password Field */}
-            <div className="w-full">
-              <Label htmlFor="password" title="password" className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2">
+            <div>
+              <Label htmlFor="password" title="password" className={labelCls}>
                 Password
               </Label>
               <div className="relative">
                 <Input
                   {...register("password")}
                   type={showPassword ? "text" : "password"}
-                  className="w-full px-4 py-3 h-auto text-base rounded-xl bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600 focus:bg-white dark:focus:bg-slate-700 focus:border-teal-500 dark:focus:border-teal-400 focus:ring-4 focus:ring-teal-500/10 dark:focus:ring-teal-400/10 outline-none transition-all duration-300 text-slate-800 dark:text-slate-100 pr-16 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                  className={`${inputCls} pr-16`}
                   placeholder="••••••••"
                 />
                 <button
@@ -199,20 +267,24 @@ const SingIn = () => {
                 </button>
               </div>
               {errors.password && (
-                <p className="text-red-500 dark:text-red-400 text-sm mt-1.5 font-medium animate-pulse">
-                  {errors.password.message}
+                <p className="text-red-500 dark:text-red-400 text-sm mt-1.5 font-medium flex items-center gap-1.5 animate-pulse">
+                  <AlertCircle className="w-4 h-4" /> {errors.password.message}
                 </p>
               )}
             </div>
 
-            {/* Forgot Password */}
-            <div className="flex justify-end -mt-2">
-              <span
-                onClick={() => navigate("/ForgetP")}
-                className="text-sm font-semibold text-teal-600 dark:text-teal-400 cursor-pointer hover:text-teal-800 dark:hover:text-teal-300 transition-colors duration-300"
-              >
+            {/* Remember me & Forgot Password */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2.5 cursor-pointer group">
+                <div className="relative flex items-center">
+                  <input type="checkbox" className="peer w-4 h-4 border-2 border-slate-300 dark:border-slate-600 rounded-md bg-transparent checked:bg-teal-600 checked:border-teal-600 transition-all appearance-none cursor-pointer focus:ring-2 focus:ring-teal-500/30 focus:outline-none" />
+                  <svg className="absolute w-4 h-4 pointer-events-none opacity-0 peer-checked:opacity-100 text-white p-[2px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200 transition-colors">Remember me</span>
+              </label>
+              <Link to="/ForgetP" className="text-sm font-bold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 transition-colors">
                 Forgot password?
-              </span>
+              </Link>
             </div>
 
             {/* Submit Button */}
@@ -220,28 +292,24 @@ const SingIn = () => {
               type="submit"
               isLoading={isSubmitting}
               disabled={isSubmitting}
-              className={`w-full h-11 bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white rounded-xl font-bold text-base shadow-lg shadow-teal-600/20 hover:shadow-xl hover:shadow-teal-600/30 hover:-translate-y-0.5 transition-all duration-300 ease-out flex justify-center items-center ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`w-full h-12 mt-2 bg-gradient-to-r from-teal-600 to-emerald-500 hover:from-teal-700 hover:to-emerald-600 text-white rounded-xl font-bold text-base shadow-[0_8px_20px_rgba(13,148,136,0.25)] hover:shadow-[0_10px_25px_rgba(13,148,136,0.35)] hover:-translate-y-0.5 transition-all duration-300 flex justify-center items-center ${isSubmitting ? 'opacity-70 cursor-not-allowed transform-none hover:shadow-none' : ''}`}
             >
-              {isSubmitting ? "Loading..." : "Log in"}
+              {isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
-
-
-          </div>
-
-          {/* Signup Link */}
-          <p className="text-slate-500 dark:text-slate-400 text-center text-sm font-medium">
-            Don't have an account?{' '}
-            <Link
-              to={'/SignUp'}
-              className="text-teal-600 dark:text-teal-400 font-bold hover:text-teal-800 dark:hover:text-teal-300 hover:underline underline-offset-4 transition-all duration-300"
-            >
-              Sign up
-            </Link>
-          </p>
-
-        </form>
-      </section>
-    </>
+            
+            {/* Sign up link */}
+            <div className="mt-12 text-center">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                Don't have an account?{' '}
+                <Link to="/SignUp" className="font-bold text-teal-600 dark:text-teal-400 hover:text-teal-800 dark:hover:text-teal-300 hover:underline underline-offset-4 transition-all">
+                  Sign up now
+                </Link>
+              </p>
+            </div>
+          </form>
+        </motion.div>
+      </div>
+    </div>
   )
 }
 

@@ -191,6 +191,16 @@ const Dashboard = () => {
   const [loading, setLoading]               = useState(true)
   const [lastUpdated, setLastUpdated]       = useState(null)
   const lastProcessedTimestamp              = useRef(null)
+  const [hasPaymentToken]                   = useState(() => {
+    try {
+      const tokenString = localStorage.getItem('payment_token')
+      if (!tokenString) return false
+      const tokenData = JSON.parse(tokenString)
+      return tokenData && tokenData.expiry && Date.now() < tokenData.expiry
+    } catch (err) {
+      return false
+    }
+  })
 
   // ── Fetch initial data ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -278,18 +288,27 @@ const Dashboard = () => {
               <div className="skeleton-shimmer h-4 w-40 rounded-full" />
               <div className="skeleton-shimmer w-40 h-40 sm:w-48 sm:h-48 lg:w-[230px] lg:h-[230px] rounded-full" />
             </div>
-            <div className="w-full flex flex-col gap-3">
+            <div className="w-full flex flex-col gap-4">
               <div className="skeleton-shimmer h-7 w-56 rounded-full" />
-              {EEG_METRICS.map((_, i) => (
-                <div key={i} className="flex flex-col gap-1">
-                  <div className="flex justify-between">
-                    <div className="skeleton-shimmer h-3 w-24 rounded-full" />
-                    <div className="skeleton-shimmer h-3 w-8 rounded-full" />
-                  </div>
-                  <div className="skeleton-shimmer h-2 w-full rounded-full" />
-                </div>
-              ))}
+              <div className="skeleton-shimmer h-4 w-48 rounded-full" />
+              <div className="skeleton-shimmer h-4 w-52 rounded-full" />
+              <div className="skeleton-shimmer h-4 w-40 rounded-full" />
             </div>
+
+            {hasPaymentToken && (
+              <div className="w-full flex flex-col gap-3 mt-2">
+                <div className="skeleton-shimmer h-7 w-56 rounded-full" />
+                {EEG_METRICS.map((_, i) => (
+                  <div key={i} className="flex flex-col gap-1">
+                    <div className="flex justify-between">
+                      <div className="skeleton-shimmer h-3 w-24 rounded-full" />
+                      <div className="skeleton-shimmer h-3 w-8 rounded-full" />
+                    </div>
+                    <div className="skeleton-shimmer h-2 w-full rounded-full" />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -470,43 +489,6 @@ const Dashboard = () => {
             </div>
           </motion.div>
 
-          {/* EEG Metrics — real-time bars */}
-          <motion.div variants={itemVariants} className="w-full flex flex-col gap-4">
-            <h2 className="font-bold text-xl sm:text-2xl text-[#111111] dark:text-slate-100">
-              EEG Brain Metrics
-            </h2>
-            <AnimatePresence mode="wait">
-              {Object.keys(eegMetrics).length > 0 ? (
-                <motion.div
-                  key={analysisTimestamp ?? 'eeg'}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col gap-3"
-                >
-                  {EEG_METRICS.map((m) => (
-                    <MetricBar
-                      key={m.key}
-                      label={m.label}
-                      icon={m.icon}
-                      color={m.color}
-                      value={eegMetrics[m.key] ?? 0}
-                    />
-                  ))}
-                </motion.div>
-              ) : (
-                <motion.p
-                  key="no-eeg"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-[#5F5F5F] dark:text-slate-400 text-sm"
-                >
-                  No EEG data yet. Upload a CSV on the E-Motiv page.
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </motion.div>
-
           {/* Current Mental State */}
           <motion.div variants={itemVariants} className="w-full flex flex-col gap-4">
             <h2 className="font-bold text-xl sm:text-2xl text-[#111111] dark:text-slate-100">
@@ -563,6 +545,45 @@ const Dashboard = () => {
               </motion.ul>
             </AnimatePresence>
           </motion.div>
+
+          {/* EEG Metrics — real-time bars */}
+          {hasPaymentToken && (
+            <motion.div variants={itemVariants} className="w-full flex flex-col gap-4">
+              <h2 className="font-bold text-xl sm:text-2xl text-[#111111] dark:text-slate-100">
+                EEG Brain Metrics
+              </h2>
+              <AnimatePresence mode="wait">
+                {Object.keys(eegMetrics).length > 0 ? (
+                  <motion.div
+                    key={analysisTimestamp ?? 'eeg'}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex flex-col gap-3"
+                  >
+                    {EEG_METRICS.map((m) => (
+                      <MetricBar
+                        key={m.key}
+                        label={m.label}
+                        icon={m.icon}
+                        color={m.color}
+                        value={eegMetrics[m.key] ?? 0}
+                      />
+                    ))}
+                  </motion.div>
+                ) : (
+                  <motion.p
+                    key="no-eeg"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-[#5F5F5F] dark:text-slate-400 text-sm"
+                  >
+                    No EEG data yet. Upload a CSV on the E-Motiv page.
+                  </motion.p>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
 
         </div>
       </div>

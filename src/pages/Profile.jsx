@@ -1,51 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProfile, updateProfile, changePassword, deleteAccount } from '../services/profileService';
+import { getAllMoods } from '../services/moodService';
 import { removeToken } from '../utils/cookieUtils';
-
-/* ─── tiny icon helpers ─────────────────────────────────────────── */
-const UserIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-  </svg>
-);
-const LockIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-    <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-);
-const TrashIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
-    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><path d="M9 6V4h6v2" />
-  </svg>
-);
-const EditIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-const CheckIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-const EyeIcon = ({ open }) => open ? (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
-  </svg>
-) : (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-    <line x1="1" y1="1" x2="23" y2="23" />
-  </svg>
-);
-const CameraIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-white">
-    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-    <circle cx="12" cy="13" r="4" />
-  </svg>
-);
+import { motion } from 'framer-motion';
+import { 
+  User, Lock, Trash2, Edit3, Check, Eye, EyeOff, Camera, 
+  Activity, Brain, Calendar, ShieldCheck
+} from 'lucide-react';
+import axiosInstance from '../utils/axiosInstance';
 
 /* ─── Toast ─────────────────────────────────────────────────────── */
 const Toast = ({ message, type, onDone }) => {
@@ -72,18 +35,25 @@ const Skeleton = ({ className }) => (
 );
 
 /* ─── Section card wrapper ───────────────────────────────────────── */
-const SectionCard = ({ icon, title, children, accent = 'teal' }) => {
+const SectionCard = ({ icon, title, children, accent = 'teal', delay = 0 }) => {
   const ring = accent === 'red' ? 'ring-red-200 dark:ring-red-900/40' : 'ring-teal-200/60 dark:ring-teal-700/30';
+  const iconBg = accent === 'red' ? 'bg-red-50 dark:bg-red-900/20 text-red-500' : 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400';
+  
   return (
-    <div className={`bg-white dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl ring-1 ${ring} shadow-lg shadow-black/[0.04] dark:shadow-black/20 p-6 md:p-8 transition-colors duration-300`}>
-      <div className="flex items-center gap-3 mb-6">
-        <span className={`p-2.5 rounded-xl ${accent === 'red' ? 'bg-red-50 dark:bg-red-900/20 text-red-500' : 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400'}`}>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay }}
+      className={`bg-white dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl ring-1 ${ring} shadow-lg shadow-black/[0.04] dark:shadow-black/20 p-6 md:p-8 transition-colors duration-300`}
+    >
+      <div className="flex items-center gap-3 mb-6 border-b border-slate-100 dark:border-slate-700/50 pb-4">
+        <span className={`p-2.5 rounded-xl ${iconBg}`}>
           {icon}
         </span>
         <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">{title}</h2>
       </div>
       {children}
-    </div>
+    </motion.div>
   );
 };
 
@@ -125,7 +95,7 @@ const PwField = ({ label, id, value, onChange }) => {
           onClick={() => setShow(s => !s)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-teal-500 dark:hover:text-teal-400 transition-colors"
         >
-          <EyeIcon open={show} />
+          {show ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
         </button>
       }
     />
@@ -161,6 +131,20 @@ export default function Profile() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingAcc, setDeletingAcc]         = useState(false);
 
+  /* stats */
+  const [moodLogsCount, setMoodLogsCount] = useState(0);
+  const [currentMentalState, setCurrentMentalState] = useState('N/A');
+  const [hasPaymentToken] = useState(() => {
+    try {
+      const tokenString = localStorage.getItem('payment_token');
+      if (!tokenString) return false;
+      const tokenData = JSON.parse(tokenString);
+      return tokenData && tokenData.expiry && Date.now() < tokenData.expiry;
+    } catch (err) {
+      return false;
+    }
+  });
+
   /* toast */
   const [toast, setToast] = useState(null);
   const showToast = (message, type = 'info') => setToast({ message, type });
@@ -190,6 +174,38 @@ export default function Profile() {
   }, []);
 
   useEffect(() => { fetchProfile(); }, [fetchProfile]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const moods = await getAllMoods();
+        if (Array.isArray(moods)) {
+          setMoodLogsCount(moods.length);
+        }
+      } catch (err) {
+        console.error('Failed to fetch moods for stats', err);
+      }
+
+      try {
+        const latestRes = await axiosInstance.get('/analysis/latest');
+        const data = latestRes?.data?.data;
+        if (data && data.result) {
+          const emotion = data.result.dominant_emotion;
+          const level = data.result.mental_level;
+          const moodLabels = { 1: 'Normal', 2: 'Mild', 3: 'Moderate', 4: 'High Risk' };
+          
+          if (emotion) {
+            setCurrentMentalState(emotion.charAt(0).toUpperCase() + emotion.slice(1));
+          } else if (level) {
+            setCurrentMentalState(moodLabels[level] || 'N/A');
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch latest analysis for stats', err);
+      }
+    };
+    fetchStats();
+  }, []);
 
   /* ── save profile info ── */
   const handleImageChange = (e) => {
@@ -292,235 +308,301 @@ export default function Profile() {
 
   return (
     <>
-      {/* ── page wrapper ── */}
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300 pt-24 pb-16 px-4 md:px-8">
+      <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 transition-colors duration-300 pt-24 pb-16 px-4 md:px-8">
+        
+        <div className="max-w-6xl mx-auto">
+          {/* Header Title */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8"
+          >
+            <h1 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Account Settings</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your personal information, security, and preferences.</p>
+          </motion.div>
 
-        {/* ── hero / avatar strip ── */}
-        <div className="max-w-3xl mx-auto mb-8">
-          <div className="relative rounded-3xl overflow-hidden bg-gradient-to-br from-[#036464] via-teal-600 to-cyan-500 dark:from-teal-900 dark:via-slate-800 dark:to-slate-900 p-8 flex flex-col sm:flex-row items-center gap-6 shadow-xl shadow-teal-500/20 dark:shadow-black/40">
-            {/* decorative blobs */}
-            <div className="pointer-events-none absolute inset-0 overflow-hidden">
-              <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
-              <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-cyan-300/20 blur-2xl" />
-              <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle,#fff 1px,transparent 1px)', backgroundSize: '24px 24px' }} />
-            </div>
+          {/* Error Banner */}
+          {profileErr && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mb-8 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-sm font-medium px-5 py-4"
+            >
+              {profileErr}
+            </motion.div>
+          )}
 
-            {/* avatar */}
-            <div className="relative z-10 flex-shrink-0 w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm border-2 border-white/40 flex items-center justify-center shadow-inner group">
-              {loadingProfile ? (
-                <div className="animate-pulse w-full h-full rounded-full bg-white/30" />
-              ) : avatarPreview ? (
-                <img src={avatarPreview} alt="Profile" className="w-full h-full rounded-full object-cover" />
-              ) : (
-                <span className="text-3xl font-bold text-white tracking-wide">{initials}</span>
-              )}
-
-              {/* Hover overlay for changing picture */}
-              {!loadingProfile && (
-                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors cursor-pointer text-white"
-                    title="Change Picture"
-                  >
-                    <CameraIcon />
-                  </button>
-                  {avatarPreview && (
-                    <button
-                      onClick={handleRemoveImage}
-                      className="p-2 bg-red-500/80 hover:bg-red-500 rounded-full transition-colors cursor-pointer text-white"
-                      title="Remove Picture"
-                    >
-                      <TrashIcon />
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleImageChange}
-            />
-
-            {/* name + email */}
-            <div className="relative z-10 text-center sm:text-left">
-              {loadingProfile ? (
-                <>
-                  <Skeleton className="h-7 w-44 mb-2" />
-                  <Skeleton className="h-4 w-36" />
-                </>
-              ) : (
-                <>
-                  <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow">
-                    {profile?.firstName || ''} {profile?.lastName || ''}
-                  </h1>
-                  <p className="text-white/75 text-sm mt-1">{profile?.email || ''}</p>
-                  {profile?.gender && (
-                    <span className="inline-block mt-2 px-3 py-0.5 rounded-full bg-white/15 border border-white/25 text-white/90 text-xs font-medium capitalize">
-                      {profile.gender}
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ── error banner ── */}
-        {profileErr && (
-          <div className="max-w-3xl mx-auto mb-6 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 text-sm font-medium px-5 py-4">
-            {profileErr}
-          </div>
-        )}
-
-        <div className="max-w-3xl mx-auto flex flex-col gap-6">
-
-          {/* ══ Section 1: Profile Info ══ */}
-          <SectionCard icon={<UserIcon />} title="Personal Information">
-            {loadingProfile ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-14" />)}
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Field
-                    label="First Name" id="firstName"
-                    value={form.firstName}
-                    onChange={e => setForm(p => ({ ...p, firstName: e.target.value }))}
-                    disabled={!editMode}
-                    placeholder="e.g. Maram"
-                  />
-                  <Field
-                    label="Last Name" id="lastName"
-                    value={form.lastName}
-                    onChange={e => setForm(p => ({ ...p, lastName: e.target.value }))}
-                    disabled={!editMode}
-                    placeholder="e.g. Haiba"
-                  />
-                  <div className="flex flex-col gap-1.5">
-                    <label htmlFor="gender" className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">Gender</label>
-                    <select
-                      id="gender"
-                      value={form.gender}
-                      onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}
-                      disabled={!editMode}
-                      className="w-full rounded-xl px-4 py-3 text-sm bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-400/60 dark:focus:ring-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    >
-                      <option value="">Select gender</option>
-                      {genderOptions.map(g => <option key={g} value={g} className="capitalize">{g}</option>)}
-                    </select>
-                  </div>
-                  <Field
-                    label="Age" id="age" type="number"
-                    value={form.age}
-                    onChange={e => setForm(p => ({ ...p, age: e.target.value }))}
-                    disabled={!editMode}
-                    placeholder="e.g. 25"
-                  />
-                </div>
-
-                {/* read-only email */}
-                <div className="mt-4">
-                  <Field
-                    label="Email" id="email"
-                    value={profile?.email || ''}
-                    disabled
-                    placeholder="—"
-                  />
-                  <p className="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500 pl-1">Email cannot be changed.</p>
-                </div>
-
-                {/* action row */}
-                <div className="flex gap-3 mt-6 justify-end">
-                  {editMode ? (
-                    <>
-                      <button
-                        onClick={() => { setEditMode(false); setForm({ firstName: profile?.firstName || '', lastName: profile?.lastName || '', gender: profile?.gender || '', age: profile?.age != null ? String(profile.age) : '' }); }}
-                        className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleSaveInfo}
-                        disabled={savingInfo}
-                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white shadow-sm shadow-teal-500/30 hover:shadow-teal-500/50 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {savingInfo
-                          ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                          : <CheckIcon />
-                        }
-                        {savingInfo ? 'Saving…' : 'Save Changes'}
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => setEditMode(true)}
-                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 ring-1 ring-teal-300 dark:ring-teal-700/60 hover:bg-teal-100 dark:hover:bg-teal-900/50 hover:-translate-y-0.5 transition-all duration-200"
-                    >
-                      <EditIcon />
-                      Edit Profile
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-          </SectionCard>
-
-          {/* ══ Section 2: Change Password ══ */}
-          <SectionCard icon={<LockIcon />} title="Change Password">
-            <form onSubmit={handleChangePassword} noValidate className="flex flex-col gap-4">
-              <div>
-                <PwField label="Current Password" id="oldPassword" value={pwForm.oldPassword} onChange={e => { setPwForm(p => ({ ...p, oldPassword: e.target.value })); setPwErrors(p => ({ ...p, oldPassword: '' })); }} />
-                {pwErrors.oldPassword && <p className="text-xs text-red-500 mt-1 pl-1">{pwErrors.oldPassword}</p>}
-              </div>
-              <div>
-                <PwField label="New Password" id="newPassword" value={pwForm.newPassword} onChange={e => { setPwForm(p => ({ ...p, newPassword: e.target.value })); setPwErrors(p => ({ ...p, newPassword: '' })); }} />
-                {pwErrors.newPassword && <p className="text-xs text-red-500 mt-1 pl-1">{pwErrors.newPassword}</p>}
-              </div>
-              <div>
-                <PwField label="Confirm New Password" id="confirmPassword" value={pwForm.confirmPassword} onChange={e => { setPwForm(p => ({ ...p, confirmPassword: e.target.value })); setPwErrors(p => ({ ...p, confirmPassword: '' })); }} />
-                {pwErrors.confirmPassword && <p className="text-xs text-red-500 mt-1 pl-1">{pwErrors.confirmPassword}</p>}
-              </div>
-
-              <div className="flex justify-end mt-2">
-                <button
-                  type="submit"
-                  disabled={savingPw}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white shadow-sm shadow-teal-500/30 hover:shadow-teal-500/50 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {savingPw
-                    ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    : <LockIcon />
-                  }
-                  {savingPw ? 'Updating…' : 'Update Password'}
-                </button>
-              </div>
-            </form>
-          </SectionCard>
-
-          {/* ══ Section 3: Danger Zone ══ */}
-          <SectionCard icon={<TrashIcon />} title="Danger Zone" accent="red">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Delete Account</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed max-w-xs">
-                  Permanently delete your account and all associated data. This action cannot be undone.
-                </p>
-              </div>
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 ring-1 ring-red-200 dark:ring-red-800/40 hover:bg-red-100 dark:hover:bg-red-900/40 hover:-translate-y-0.5 transition-all duration-200"
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* ─── LEFT COLUMN (Sidebar) ─── */}
+            <div className="lg:col-span-4 flex flex-col gap-6">
+              
+              {/* Profile Card */}
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="relative rounded-3xl overflow-hidden bg-white dark:bg-slate-800/80 shadow-lg shadow-black/[0.04] dark:shadow-black/20 ring-1 ring-slate-200/60 dark:ring-slate-700/30 p-8 flex flex-col items-center text-center"
               >
-                <TrashIcon />
-                Delete Account
-              </button>
-            </div>
-          </SectionCard>
+                {/* Background Banner */}
+                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-[#036464] via-teal-600 to-cyan-500 dark:from-teal-900 dark:via-slate-800 dark:to-slate-900 opacity-90" />
+                
+                {/* Avatar */}
+                <div className="relative z-10 w-28 h-28 mt-4 rounded-full bg-white dark:bg-slate-800 border-4 border-white dark:border-slate-800 flex items-center justify-center shadow-md group">
+                  {loadingProfile ? (
+                    <div className="animate-pulse w-full h-full rounded-full bg-slate-200 dark:bg-slate-700" />
+                  ) : avatarPreview ? (
+                    <img src={avatarPreview} alt="Profile" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    <span className="text-3xl font-bold text-teal-600 dark:text-teal-400 tracking-wide">{initials}</span>
+                  )}
 
+                  {/* Hover overlay for changing picture */}
+                  {!loadingProfile && (
+                    <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 bg-white/20 hover:bg-white/30 rounded-full transition-colors cursor-pointer text-white"
+                        title="Change Picture"
+                      >
+                        <Camera className="w-5 h-5" />
+                      </button>
+                      {avatarPreview && (
+                        <button
+                          onClick={handleRemoveImage}
+                          className="p-2 bg-red-500/80 hover:bg-red-500 rounded-full transition-colors cursor-pointer text-white"
+                          title="Remove Picture"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageChange} />
+
+                {/* Info */}
+                <div className="mt-4 w-full">
+                  {loadingProfile ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                        {profile?.firstName || ''} {profile?.lastName || ''}
+                      </h2>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{profile?.email || ''}</p>
+                      {profile?.gender && (
+                        <span className="inline-block mt-3 px-3 py-1 rounded-full bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 text-xs font-semibold uppercase tracking-wider">
+                          {profile.gender}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* Stats / Activity Overview Card */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-white dark:bg-slate-800/80 backdrop-blur-sm rounded-3xl ring-1 ring-slate-200/60 dark:ring-slate-700/30 shadow-lg shadow-black/[0.04] dark:shadow-black/20 p-6"
+              >
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-teal-500" /> Overview
+                </h3>
+                
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/50 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-500">
+                      <Calendar className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Mood Logs</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{moodLogsCount} Entries</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/50 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-500">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Account Status</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{hasPaymentToken ? 'Premium' : 'Standard'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-700/50 transition-colors hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <div className="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-500">
+                      <Brain className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Current Mental State</p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-100">{currentMentalState}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+            </div>
+
+            {/* ─── RIGHT COLUMN (Forms) ─── */}
+            <div className="lg:col-span-8 flex flex-col gap-6">
+              
+              {/* ══ Section 1: Profile Info ══ */}
+              <SectionCard icon={<User className="w-5 h-5" />} title="Personal Information" delay={0.2}>
+                {loadingProfile ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16" />)}
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <Field
+                        label="First Name" id="firstName"
+                        value={form.firstName}
+                        onChange={e => setForm(p => ({ ...p, firstName: e.target.value }))}
+                        disabled={!editMode}
+                        placeholder="e.g. Maram"
+                      />
+                      <Field
+                        label="Last Name" id="lastName"
+                        value={form.lastName}
+                        onChange={e => setForm(p => ({ ...p, lastName: e.target.value }))}
+                        disabled={!editMode}
+                        placeholder="e.g. Haiba"
+                      />
+                      <div className="flex flex-col gap-1.5">
+                        <label htmlFor="gender" className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500">Gender</label>
+                        <select
+                          id="gender"
+                          value={form.gender}
+                          onChange={e => setForm(p => ({ ...p, gender: e.target.value }))}
+                          disabled={!editMode}
+                          className="w-full rounded-xl px-4 py-3 text-sm bg-slate-50 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600/60 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-400/60 dark:focus:ring-teal-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        >
+                          <option value="">Select gender</option>
+                          {genderOptions.map(g => <option key={g} value={g} className="capitalize">{g}</option>)}
+                        </select>
+                      </div>
+                      <Field
+                        label="Age" id="age" type="number"
+                        value={form.age}
+                        onChange={e => setForm(p => ({ ...p, age: e.target.value }))}
+                        disabled={!editMode}
+                        placeholder="e.g. 25"
+                      />
+                    </div>
+
+                    {/* read-only email */}
+                    <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-700/50">
+                      <Field
+                        label="Email Address" id="email"
+                        value={profile?.email || ''}
+                        disabled
+                        placeholder="—"
+                      />
+                      <p className="mt-2 text-xs text-slate-400 dark:text-slate-500 pl-1 flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-teal-500" /> Email is verified and cannot be changed here.
+                      </p>
+                    </div>
+
+                    {/* action row */}
+                    <div className="flex gap-3 mt-8 justify-end">
+                      {editMode ? (
+                        <>
+                          <button
+                            onClick={() => { setEditMode(false); setForm({ firstName: profile?.firstName || '', lastName: profile?.lastName || '', gender: profile?.gender || '', age: profile?.age != null ? String(profile.age) : '' }); }}
+                            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleSaveInfo}
+                            disabled={savingInfo}
+                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white shadow-sm shadow-teal-500/30 hover:shadow-teal-500/50 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {savingInfo
+                              ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                              : <Check className="w-4 h-4" />
+                            }
+                            {savingInfo ? 'Saving…' : 'Save Changes'}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setEditMode(true)}
+                          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 ring-1 ring-teal-300 dark:ring-teal-700/60 hover:bg-teal-100 dark:hover:bg-teal-900/50 hover:-translate-y-0.5 transition-all duration-200"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          Edit Profile
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
+              </SectionCard>
+
+              {/* ══ Section 2: Change Password ══ */}
+              <SectionCard icon={<Lock className="w-5 h-5" />} title="Security & Password" delay={0.3}>
+                <form onSubmit={handleChangePassword} noValidate className="flex flex-col gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="md:col-span-2">
+                      <PwField label="Current Password" id="oldPassword" value={pwForm.oldPassword} onChange={e => { setPwForm(p => ({ ...p, oldPassword: e.target.value })); setPwErrors(p => ({ ...p, oldPassword: '' })); }} />
+                      {pwErrors.oldPassword && <p className="text-xs text-red-500 mt-1 pl-1">{pwErrors.oldPassword}</p>}
+                    </div>
+                    <div>
+                      <PwField label="New Password" id="newPassword" value={pwForm.newPassword} onChange={e => { setPwForm(p => ({ ...p, newPassword: e.target.value })); setPwErrors(p => ({ ...p, newPassword: '' })); }} />
+                      {pwErrors.newPassword && <p className="text-xs text-red-500 mt-1 pl-1">{pwErrors.newPassword}</p>}
+                    </div>
+                    <div>
+                      <PwField label="Confirm New Password" id="confirmPassword" value={pwForm.confirmPassword} onChange={e => { setPwForm(p => ({ ...p, confirmPassword: e.target.value })); setPwErrors(p => ({ ...p, confirmPassword: '' })); }} />
+                      {pwErrors.confirmPassword && <p className="text-xs text-red-500 mt-1 pl-1">{pwErrors.confirmPassword}</p>}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end mt-2 pt-5 border-t border-slate-100 dark:border-slate-700/50">
+                    <button
+                      type="submit"
+                      disabled={savingPw}
+                      className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-[#036464] to-teal-500 dark:from-teal-700 dark:to-teal-500 text-white shadow-sm shadow-teal-500/30 hover:shadow-teal-500/50 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {savingPw
+                        ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        : <Lock className="w-4 h-4" />
+                      }
+                      {savingPw ? 'Updating…' : 'Update Password'}
+                    </button>
+                  </div>
+                </form>
+              </SectionCard>
+
+              {/* ══ Section 3: Danger Zone ══ */}
+              <SectionCard icon={<Trash2 className="w-5 h-5" />} title="Danger Zone" accent="red" delay={0.4}>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Delete Account</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5 leading-relaxed max-w-sm">
+                      Permanently delete your account and all associated data. This action cannot be undone. All your EEG metrics and sessions will be lost.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="flex-shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 ring-1 ring-red-200 dark:ring-red-800/40 hover:bg-red-100 dark:hover:bg-red-900/40 hover:-translate-y-0.5 transition-all duration-200"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Account
+                  </button>
+                </div>
+              </SectionCard>
+
+            </div>
+          </div>
         </div>
       </div>
 
@@ -530,21 +612,24 @@ export default function Profile() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
           onClick={() => !deletingAcc && setShowDeleteModal(false)}
         >
-          <div
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
             className="bg-white dark:bg-slate-800 rounded-3xl p-8 w-full max-w-sm shadow-2xl border border-slate-100 dark:border-slate-700"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex flex-col items-center text-center gap-4">
               <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-500">
-                <TrashIcon />
+                <Trash2 className="w-8 h-8" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Delete Account?</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                   This will permanently delete your account and all your data. This cannot be undone.
                 </p>
               </div>
-              <div className="flex gap-3 w-full mt-2">
+              <div className="flex gap-3 w-full mt-4">
                 <button
                   onClick={() => setShowDeleteModal(false)}
                   disabled={deletingAcc}
@@ -562,7 +647,7 @@ export default function Profile() {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
