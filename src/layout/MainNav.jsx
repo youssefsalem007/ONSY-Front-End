@@ -10,8 +10,22 @@ const MainNav = () => {
   const isHomePage = location.pathname === '/';
   const isSpeakPage = location.pathname === '/Speak';
   const isMoodPage = location.pathname === '/Mood';
+  const isTransparentPage = isHomePage || isMoodPage;
 
   const isAuthenticated = !!getToken();
+
+  const getUserRole = () => {
+    const token = getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return payload.role;
+    } catch {
+      return null;
+    }
+  };
+
+  const isAdmin = getUserRole() === 'admin';
 
   const handleAuthAction = () => {
     if (isAuthenticated) {
@@ -41,7 +55,10 @@ const MainNav = () => {
 
   return (
     <section
-      className={`w-full fixed top-0 z-50 px-5 lg:px-10 transition-all duration-300 ${isSpeakPage ? 'hidden h-0' : ''}`}
+      className={`w-full fixed top-0 z-50 px-5 lg:px-10 transition-all duration-300
+        ${isSpeakPage ? 'hidden h-0' : ''}
+        ${!isTransparentPage ? 'bg-white/80 dark:bg-slate-900/95 backdrop-blur-sm' : ''}
+      `}
     >
       {/* ── Glass pill navbar ── */}
       <div
@@ -73,6 +90,7 @@ const MainNav = () => {
           <NavLink to="/EMotiv" className={getNavClass}>E&#8209;Motiv</NavLink>
           <NavLink to="/Mood" className={getNavClass}>Mood</NavLink>
           {isAuthenticated && <NavLink to="/Profile" className={getNavClass}>Profile</NavLink>}
+          {isAdmin && <NavLink to="/admin" className={getNavClass}>Admin</NavLink>}
         </nav>
 
         {/* 3. Right side: Theme toggle + Auth button + hamburger */}
@@ -145,6 +163,7 @@ const MainNav = () => {
           <NavLink to="/EMotiv" onClick={() => setIsOpen(false)} className={getMobileNavClass}>E-Motiv</NavLink>
           <NavLink to="/Mood" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Mood</NavLink>
           {isAuthenticated && <NavLink to="/Profile" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Profile</NavLink>}
+          {isAdmin && <NavLink to="/admin" onClick={() => setIsOpen(false)} className={getMobileNavClass}>Admin</NavLink>}
 
           {/* Divider */}
           <div className="my-1 h-px bg-slate-100 dark:bg-slate-700 rounded-full" />

@@ -28,6 +28,8 @@ import { SocketProvider } from './context/SocketContext'
 import MoodReminderNotification from './components/MoodReminderNotification'
 import ScrollToTop from './components/ScrollToTop'
 
+import AdminDashboard from './pages/AdminDashboard'
+
 function App() {
 
   return (
@@ -55,6 +57,7 @@ function App() {
             <Route path='/EEGAnalysis' element={<ProtectedRoute> <PaymentProtectedRoute> <EEGAnalysis /> </PaymentProtectedRoute> </ProtectedRoute>} />
             <Route path='/Mood' element={<ProtectedRoute> <MoodT /> </ProtectedRoute>} />
             <Route path='/Profile' element={<ProtectedRoute> <Profile /> </ProtectedRoute>} />
+            <Route path='/admin' element={<ProtectedRoute> <AdminDashboard /> </ProtectedRoute>} />
             {/* <Route path='/Speak' element={<ProtectedRoute> <AiChat /> </ProtectedRoute>  } /> */}
             <Route path='*' element={<NotFound />} />
           </Routes>

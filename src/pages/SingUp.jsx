@@ -8,6 +8,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from '../services/authService';
 import { motion } from 'framer-motion';
 import { Brain, Network, HeartPulse, AlertCircle } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
+import { googleSignup } from '../services/authService';
 
 const SignUp = () => {
   const [isError, setError] = useState(false);
@@ -19,6 +21,23 @@ const SignUp = () => {
     resolver: zodResolver(registerSchema),
     defaultValues: { firstName: "", lastName: "", email: "", dateOfBirth: "", gender: "", password: "", confirmPassword: "" },
     mode: 'onBlur'
+  });
+
+  const handleGoogleSuccess = useGoogleLogin({
+    onSuccess: async (credentialResponse) => {
+      try {
+        await googleSignup(credentialResponse.access_token);
+        toast.success("Account created successfully!");
+        navigate("/");
+      } catch (err) {
+        setError(true);
+        toast.error("Google signup failed. Please try again.");
+      }
+    },
+    onError: () => {
+      setError(true);
+      toast.error("Google Signup Failed");
+    }
   });
 
   const calculateAge = (dob) => {
@@ -119,12 +138,12 @@ const SignUp = () => {
   return (
     <div className="min-h-screen w-full flex bg-white dark:bg-slate-900 font-sans">
       
-      {/* Left Side - Visuals (Right aligned for SignUp to alternate layout, but kept standard split here) */}
-      <div className="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-slate-950 order-2">
+      {/* Left Side - Visuals */}
+      <div className="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-emerald-50 dark:bg-slate-950 order-2">
         {/* Background Gradients & Effects */}
-        <div className="absolute inset-0 bg-gradient-to-tl from-teal-900/50 via-slate-900 to-slate-950" />
-        <div className="absolute w-[700px] h-[700px] bg-emerald-500/10 rounded-full blur-[150px] top-10 left-10 animate-pulse duration-[6000ms]" />
-        <div className="absolute w-[400px] h-[400px] bg-teal-600/20 rounded-full blur-[100px] -bottom-20 -right-20 animate-pulse duration-[8000ms]" />
+        <div className="absolute inset-0 bg-gradient-to-tl from-emerald-100/80 via-white to-teal-50 dark:from-teal-900/50 dark:via-slate-900 dark:to-slate-950" />
+        <div className="absolute w-[700px] h-[700px] bg-emerald-400/10 dark:bg-emerald-500/10 rounded-full blur-[150px] top-10 left-10 animate-pulse duration-[6000ms]" />
+        <div className="absolute w-[400px] h-[400px] bg-teal-400/10 dark:bg-teal-600/20 rounded-full blur-[100px] -bottom-20 -right-20 animate-pulse duration-[8000ms]" />
         
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center p-12 text-center max-w-xl mx-auto">
@@ -132,16 +151,16 @@ const SignUp = () => {
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="bg-white/5 p-6 rounded-3xl backdrop-blur-md mb-8 border border-white/10 shadow-2xl"
+            className="bg-emerald-500/10 dark:bg-white/5 p-6 rounded-3xl backdrop-blur-md mb-8 border border-emerald-200/60 dark:border-white/10 shadow-xl"
           >
-            <Network className="w-20 h-20 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]" />
+            <Network className="w-20 h-20 text-emerald-600 dark:text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]" />
           </motion.div>
           
           <motion.h2 
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-4xl lg:text-5xl font-extrabold mb-6 tracking-tight text-white"
+            className="text-4xl lg:text-5xl font-extrabold mb-6 tracking-tight text-slate-800 dark:text-white"
           >
             Join the Revolution
           </motion.h2>
@@ -150,7 +169,7 @@ const SignUp = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-slate-300 text-lg leading-relaxed mb-10"
+            className="text-slate-500 dark:text-slate-300 text-lg leading-relaxed mb-10"
           >
             Create an account to track your emotions, interact with our AI, and explore deep neurological insights.
           </motion.p>
@@ -161,7 +180,7 @@ const SignUp = () => {
             transition={{ duration: 0.6, delay: 0.6 }}
             className="flex flex-wrap gap-4 items-center justify-center"
           >
-            <div className="flex items-center gap-2 text-sm font-medium text-emerald-200 bg-emerald-900/30 px-5 py-2.5 rounded-full border border-emerald-800/50 backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-900/30 px-5 py-2.5 rounded-full border border-emerald-200 dark:border-emerald-800/50 backdrop-blur-sm">
               <HeartPulse className="w-4 h-4" /> Emotion Tracking
             </div>
           </motion.div>
@@ -262,10 +281,31 @@ const SignUp = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
             <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting} className={`w-full h-12 mt-4 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-500 hover:from-teal-700 hover:to-emerald-600 text-white font-bold text-base shadow-[0_8px_20px_rgba(16,185,129,0.25)] hover:shadow-[0_10px_25px_rgba(16,185,129,0.35)] hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center ${isSubmitting ? 'opacity-70 cursor-not-allowed transform-none hover:shadow-none' : ''}`}>
               {isSubmitting ? "Creating Account..." : "Create Account"}
             </Button>
+
+            {/* Google Sign Up */}
+            <div className="mt-6 flex flex-col items-center gap-4">
+              <div className="flex items-center w-full">
+                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+                <span className="px-4 text-sm font-medium text-slate-500 dark:text-slate-400">Or sign up with</span>
+                <div className="flex-1 h-px bg-slate-200 dark:bg-slate-700"></div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleGoogleSuccess()}
+                className="w-full h-12 flex items-center justify-center gap-3 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-xl font-bold text-base shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] hover:bg-slate-50 dark:hover:bg-slate-700 hover:shadow-md transition-all duration-300 group"
+              >
+                <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                </svg>
+                Sign up with Google
+              </button>
+            </div>
 
             <div className="mt-10 text-center">
               <p className="text-sm font-medium text-slate-600 dark:text-slate-400">

@@ -90,7 +90,7 @@ export default function ForgetPOTP() {
                 <input
                   {...props}
                   type="text"
-                  className="w-14! h-14! lg:w-20! lg:h-20! text-2xl lg:text-3xl font-bold text-white bg-[#036464] dark:bg-teal-700 rounded-2xl outline-none focus:ring-4 focus:ring-teal-400 dark:focus:ring-teal-300 text-center transition-all shadow-lg"
+                  className="w-14! h-14! lg:w-20! lg:h-20! text-2xl lg:text-3xl font-bold text-slate-800 dark:text-white bg-white dark:bg-teal-700 border-2 border-slate-200 dark:border-teal-600 rounded-2xl outline-none focus:ring-4 focus:ring-teal-400/40 dark:focus:ring-teal-300/30 focus:border-teal-500 dark:focus:border-teal-400 text-center transition-all shadow-sm dark:shadow-lg"
                 />
               )}
             />

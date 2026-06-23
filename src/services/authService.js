@@ -13,7 +13,24 @@ export const registerUser = async (userData) => {
 
 export const googleSignup = async (idToken) => {
   try {
-    const response = await axiosInstance.post('/users/signup/gmail', { idToken });
+    const response = await axiosInstance.post('/auth/google-signup', { idToken });
+    const token = response.data?.data?.access_token; 
+    if (token) {
+      setToken(token);
+    }
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const googleLogin = async (idToken) => {
+  try {
+    const response = await axiosInstance.post('/auth/google-login', { idToken });
+    const token = response.data?.data?.access_token; 
+    if (token) {
+      setToken(token);
+    }
     return response.data;
   } catch (error) {
     throw error;
